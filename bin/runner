@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "watchcat"
+
+raise "please specify a path to watch" if ARGV.length.zero?
+w = Watchcat.watch(ARGV[0], recursive: false) { |e| pp e.kind, e.paths }
+
+puts "watching start"
+
+sleep
