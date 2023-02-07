@@ -6,6 +6,7 @@ require "watchcat"
 
 raise "please specify a path to watch" if ARGV.length.zero?
 w = Watchcat.watch(ARGV[0], recursive: false) { |e| pp e.kind, e.paths }
+# Signal.trap('INT') { Thread.new { w.close; exit } }
 
 puts "watching start"
 

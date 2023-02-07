@@ -2,7 +2,7 @@ use crossbeam_channel::{select, unbounded};
 use magnus::{
     block::{block_given, yield_value},
     class::object,
-    define_module, function, method,
+    define_module, function, gvl, method,
     scan_args::{get_kwargs, scan_args},
     Error, Module, Object, Value,
 };
@@ -82,44 +82,51 @@ impl Executor {
             }
         }
 
-        loop {
-            select! {
-                recv(self.rx) -> _res => {
-                    return Ok("".to_string())
-                }
-                recv(rx) -> res => {
-                    match res {
-                        Ok(event) => {
-                            match event {
-                                Ok(event) => {
-                                    let paths = event
-                                        .paths
-                                        .iter()
-                                        .map(|p| p.to_string_lossy().into_owned())
-                                        .collect::<Vec<_>>();
+        gvl::without_gvl(
+            move |_| loop {
+                select! {
+                    recv(self.rx) -> _res => {
+                        eprintln!("get self.rx");
+                        return
+                    }
+                    recv(rx) -> res => {
+                        match res {
+                            Ok(event) => {
+                                match event {
+                                    Ok(event) => {
+                                        let paths = event
+                                            .paths
+                                            .iter()
+                                            .map(|p| p.to_string_lossy().into_owned())
+                                            .collect::<Vec<_>>();
 
-                                    match yield_value::<Event, Value>(Event {
-                                        kind: (Self::convert_event_kind(event.kind)),
-                                        paths: paths,
-                                    }) {
-                                        Ok(_) => { continue },
-                                        Err(e) => {
-                                            eprintln!("watch error: {:?}", e);
-                                            return Ok("".to_string())
+                                        match yield_value::<Event, Value>(Event {
+                                            kind: (Self::convert_event_kind(event.kind)),
+                                            paths: paths,
+                                        }) {
+                                            Ok(_) => {},
+                                            Err(e) => {
+                                                eprintln!("yield error: {:?}", e);
+                                                panic!();
+                                            }
                                         }
                                     }
-                                }
-                                Err(e) => {
-                                    eprintln!("watch error: {:?}", e);
-                                    return Ok("".to_string())
+                                    Err(e) => {
+                                        eprintln!("got unexpected event error: {:?}", e);
+                                        return
+                                    }
                                 }
                             }
+                            Err(e) => eprintln!("got unexpected response error: {:?}", e),
                         }
-                        Err(e) => eprintln!("watch error: {:?}", e),
                     }
                 }
-            }
-        }
+            },
+            Some(|| {
+                panic!();
+            }),
+        );
+        return Ok("".to_string());
     }
 
     fn parse_args(args: &[Value]) -> Result<(String, bool), Error> {
