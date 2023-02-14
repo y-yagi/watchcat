@@ -29,13 +29,13 @@ impl Event {
     }
 }
 
-#[magnus::wrap(class = "Watchcat::Executor")]
-struct Executor {
+#[magnus::wrap(class = "Watchcat::Watcher")]
+struct WatchcatWatcher {
     tx: crossbeam_channel::Sender<bool>,
     rx: crossbeam_channel::Receiver<bool>,
 }
 
-impl Executor {
+impl WatchcatWatcher {
     fn new() -> Self {
         let (tx_executor, rx_executor) = unbounded::<bool>();
         Self {
@@ -154,10 +154,10 @@ impl Executor {
 fn init() -> Result<(), Error> {
     let module = define_module("Watchcat")?;
 
-    let executor_class = module.define_class("Executor", object())?;
-    executor_class.define_singleton_method("new", function!(Executor::new, 0))?;
-    executor_class.define_method("raw_watch", method!(Executor::watch, -1))?;
-    executor_class.define_method("raw_close", method!(Executor::close, 0))?;
+    let watcher_class = module.define_class("Watcher", object())?;
+    watcher_class.define_singleton_method("new", function!(WatchcatWatcher::new, 0))?;
+    watcher_class.define_method("watch", method!(WatchcatWatcher::watch, -1))?;
+    watcher_class.define_method("close", method!(WatchcatWatcher::close, 0))?;
 
     let event_class = module.define_class("Event", object())?;
     event_class.define_singleton_method("new", function!(Event::new, 2))?;
