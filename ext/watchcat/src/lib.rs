@@ -91,18 +91,24 @@ impl WatchcatWatcher {
                                     }) {
                                         Ok(_) => { continue },
                                         Err(e) => {
-                                            eprintln!("watch error: {:?}", e);
-                                            return Ok(false)
+                                            return Err(
+                                                Error::new(magnus::exception::runtime_error(), e.to_string())
+                                            )
                                         }
                                     }
                                 }
                                 Err(e) => {
-                                    eprintln!("watch error: {:?}", e);
-                                    return Ok(false)
+                                    return Err(
+                                        Error::new(magnus::exception::runtime_error(), e.to_string())
+                                    )
                                 }
                             }
                         }
-                        Err(e) => eprintln!("watch error: {:?}", e),
+                        Err(e) => {
+                            return Err(
+                                Error::new(magnus::exception::runtime_error(), e.to_string())
+                            )
+                        }
                     }
                 }
             }
