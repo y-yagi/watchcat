@@ -48,7 +48,7 @@ impl WatchcatWatcher {
         self.tx.send(true).unwrap()
     }
 
-    fn watch(&self, args: &[Value]) -> Result<String, Error> {
+    fn watch(&self, args: &[Value]) -> Result<bool, Error> {
         if !block_given() {
             return Err(Error::new(magnus::exception::arg_error(), "no block given"));
         }
@@ -72,7 +72,7 @@ impl WatchcatWatcher {
         loop {
             select! {
                 recv(self.rx) -> _res => {
-                    return Ok("".to_string())
+                    return Ok(true)
                 }
                 recv(rx) -> res => {
                     match res {
@@ -92,13 +92,13 @@ impl WatchcatWatcher {
                                         Ok(_) => { continue },
                                         Err(e) => {
                                             eprintln!("watch error: {:?}", e);
-                                            return Ok("".to_string())
+                                            return Ok(false)
                                         }
                                     }
                                 }
                                 Err(e) => {
                                     eprintln!("watch error: {:?}", e);
-                                    return Ok("".to_string())
+                                    return Ok(false)
                                 }
                             }
                         }
