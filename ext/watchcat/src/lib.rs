@@ -56,15 +56,8 @@ impl WatchcatWatcher {
         let (pathname, recursive) = Self::parse_args(args)?;
         let path = Path::new(&pathname);
         let (tx, rx) = unbounded();
-        let mut watcher = match RecommendedWatcher::new(tx, Config::default()) {
-            Ok(w) => w,
-            Err(error) => {
-                return Err(Error::new(
-                    magnus::exception::arg_error(),
-                    error.to_string(),
-                ))
-            }
-        };
+        let mut watcher = RecommendedWatcher::new(tx, Config::default())
+            .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
 
         let mode = if recursive {
             RecursiveMode::Recursive
@@ -72,15 +65,9 @@ impl WatchcatWatcher {
             RecursiveMode::NonRecursive
         };
 
-        match watcher.watch(path, mode) {
-            Ok(_result) => {}
-            Err(error) => {
-                return Err(Error::new(
-                    magnus::exception::arg_error(),
-                    error.to_string(),
-                ))
-            }
-        }
+        watcher
+            .watch(path, mode)
+            .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
 
         loop {
             select! {
