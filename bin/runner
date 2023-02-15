@@ -10,6 +10,4 @@ w = Watchcat.watch(ARGV[0], recursive: false) { |e| pp e.kind, e.paths }
 at_exit { w.stop }
 
 puts "watching start"
-sleep 30
-w.stop
-puts "watching stop"
+sleep
