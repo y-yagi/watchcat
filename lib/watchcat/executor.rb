@@ -17,6 +17,7 @@ module Watchcat
       server = Server.new(@block)
       @service = DRb.start_service("drbunix:", server)
       @child_pid = fork do
+        Process.setproctitle("watchcat: watcher")
         client = Client.new(@service.uri, path: @path, recursive: @recursive)
         client.run
       end
