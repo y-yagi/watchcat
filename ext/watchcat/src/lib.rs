@@ -45,7 +45,7 @@ impl WatchcatWatcher {
     }
 
     fn close(&self) {
-        self.tx.send(true);
+        self.tx.send(true).unwrap()
     }
 
     fn watch(&self, args: &[Value]) -> Result<String, Error> {
@@ -100,7 +100,7 @@ impl WatchcatWatcher {
 
                                     match yield_value::<Event, Value>(Event {
                                         kind: (Self::convert_event_kind(event.kind)),
-                                        paths: paths,
+                                        paths,
                                     }) {
                                         Ok(_) => { continue },
                                         Err(e) => {
@@ -122,6 +122,7 @@ impl WatchcatWatcher {
         }
     }
 
+    #[allow(clippy::let_unit_value)]
     fn parse_args(args: &[Value]) -> Result<(String, bool), Error> {
         let args = scan_args(args)?;
         let (path,): (String,) = args.required;
@@ -135,7 +136,7 @@ impl WatchcatWatcher {
         let _: () = kwargs.required;
         let _: () = kwargs.splat;
 
-        Ok((path, recursive.flatten().unwrap_or_else(|| false)))
+        Ok((path, recursive.flatten().unwrap_or(false)))
     }
 
     fn convert_event_kind(kind: EventKind) -> u8 {
