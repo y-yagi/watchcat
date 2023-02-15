@@ -5,9 +5,7 @@ require "bundler/setup"
 require "watchcat"
 
 raise "please specify a path to watch" if ARGV.length.zero?
-w = Watchcat::Executor.new
-w.add(ARGV[0], recursive: false) { |e| pp e.kind, e.paths }
-w.start
+w = Watchcat.watch(ARGV[0], recursive: false) { |e| pp e.kind, e.paths }
 
 at_exit { w.stop }
 

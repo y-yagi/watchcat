@@ -1,26 +1,23 @@
 require "drb"
 require "drb/unix"
 require_relative "server"
+require_relative "client"
 
 module Watchcat
   class Executor
-    def initialize
+    def initialize(path, recursive:, block:)
       @service = nil
       @child_pid = nil
-      @args_for_client = {}
-      @args_for_server = {}
-    end
-
-    def add(path, recursive: false, &block)
-      @args_for_client[path] = recursive
-      @args_for_server[path] = block
+      @path = path
+      @recursive = recursive
+      @block = block
     end
 
     def start
-      server = Server.new(@args_for_server)
+      server = Server.new(@block)
       @service = DRb.start_service("drbunix:", server)
       @child_pid = fork do
-        client = Client.new(@service.uri, @args_for_client)
+        client = Client.new(@service.uri, path: @path, recursive: @recursive)
         client.run
       end
     end

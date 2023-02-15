@@ -1,13 +1,11 @@
 module Watchcat
   class Server
-    def initialize(args)
-      @paths_with_block = args
+    def initialize(block)
+      @block = block
     end
 
     def execute(event)
-      event.paths.each do |path|
-        @paths_with_block[path].call(event) if @paths_with_block.key?(path)
-      end
+      @block.call(event)
     end
   end
 end
