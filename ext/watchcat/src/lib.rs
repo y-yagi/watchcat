@@ -7,7 +7,9 @@ use magnus::{
     Error, Module, Object, Value,
 };
 use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use std::path::Path;
+use std::{
+    path::Path,
+};
 
 #[magnus::wrap(class = "Watchcat::Event")]
 struct Event {
@@ -53,8 +55,7 @@ impl WatchcatWatcher {
             return Err(Error::new(magnus::exception::arg_error(), "no block given"));
         }
 
-        let (pathname, recursive) = Self::parse_args(args)?;
-        let path = Path::new(&pathname);
+        let (pathnames, recursive) = Self::parse_args(args)?;
         let (tx, rx) = unbounded();
         let mut watcher = RecommendedWatcher::new(tx, Config::default())
             .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
@@ -65,9 +66,12 @@ impl WatchcatWatcher {
             RecursiveMode::NonRecursive
         };
 
-        watcher
-            .watch(path, mode)
-            .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+        for pathname in &pathnames {
+            let path = Path::new(pathname);
+            watcher
+                .watch(path, mode)
+                .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+        }
 
         loop {
             select! {
@@ -116,9 +120,9 @@ impl WatchcatWatcher {
     }
 
     #[allow(clippy::let_unit_value)]
-    fn parse_args(args: &[Value]) -> Result<(String, bool), Error> {
+    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool), Error> {
         let args = scan_args(args)?;
-        let (path,): (String,) = args.required;
+        let (paths,): (Vec<String>,) = args.required;
         let _: () = args.optional;
         let _: () = args.splat;
         let _: () = args.trailing;
@@ -129,7 +133,7 @@ impl WatchcatWatcher {
         let _: () = kwargs.required;
         let _: () = kwargs.splat;
 
-        Ok((path, recursive.flatten().unwrap_or(false)))
+        Ok((paths, recursive.flatten().unwrap_or(false)))
     }
 
     fn convert_event_kind(kind: EventKind) -> u8 {

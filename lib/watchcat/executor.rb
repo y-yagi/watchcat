@@ -5,10 +5,10 @@ require_relative "client"
 
 module Watchcat
   class Executor
-    def initialize(path, recursive:, block:)
+    def initialize(paths, recursive:, block:)
       @service = nil
       @child_pid = nil
-      @path = path
+      @paths = paths
       @recursive = recursive
       @block = block
     end
@@ -18,7 +18,7 @@ module Watchcat
       @service = DRb.start_service("drbunix:", server)
       @child_pid = fork do
         Process.setproctitle("watchcat: watcher")
-        client = Client.new(@service.uri, path: @path, recursive: @recursive)
+        client = Client.new(@service.uri, paths: @paths, recursive: @recursive)
         client.run
       end
     end
