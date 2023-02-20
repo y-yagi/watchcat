@@ -10,6 +10,8 @@ Rake::ExtensionTask.new("watchcat") do |c|
 end
 
 Rake::TestTask.new do |t|
+  t.libs << "test"
+  t.libs << "lib"
   t.deps << :compile
   t.test_files = FileList[File.expand_path("test/*_test.rb", __dir__)]
 end
