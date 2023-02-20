@@ -7,9 +7,7 @@ use magnus::{
     Error, Module, Object, Value,
 };
 use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use std::{
-    path::Path,
-};
+use std::path::Path;
 
 #[magnus::wrap(class = "Watchcat::Watcher")]
 struct WatchcatWatcher {
@@ -73,9 +71,7 @@ impl WatchcatWatcher {
                                         (Self::convert_event_kind(event.kind), paths)
                                     ) {
                                         Ok(_) => { continue },
-                                        Err(e) => {
-                                            return Err(e);
-                                        }
+                                        Err(e) => { return Err(e); }
                                     }
                                 }
                                 Err(e) => {
