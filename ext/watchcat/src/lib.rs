@@ -95,9 +95,7 @@ impl WatchcatWatcher {
                                     }) {
                                         Ok(_) => { continue },
                                         Err(e) => {
-                                            return Err(
-                                                Error::new(magnus::exception::runtime_error(), e.to_string())
-                                            )
+                                            return Err(e);
                                         }
                                     }
                                 }
