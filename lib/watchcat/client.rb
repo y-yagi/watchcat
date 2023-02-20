@@ -9,8 +9,8 @@ module Watchcat
     end
 
     def run
-      @watcher.watch(@paths, recursive: @recursive) do |event|
-        @server.execute(event)
+      @watcher.watch(@paths, recursive: @recursive) do |notification|
+        @server.execute(notification)
       end
     end
   end

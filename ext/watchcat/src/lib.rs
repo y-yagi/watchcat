@@ -11,26 +11,6 @@ use std::{
     path::Path,
 };
 
-#[magnus::wrap(class = "Watchcat::Event")]
-struct Event {
-    kind: u8,
-    paths: Vec<String>,
-}
-
-impl Event {
-    fn new(kind: u8, paths: Vec<String>) -> Self {
-        Self { kind, paths }
-    }
-
-    fn kind(&self) -> u8 {
-        self.kind
-    }
-
-    fn paths(&self) -> Vec<String> {
-        self.paths.to_vec()
-    }
-}
-
 #[magnus::wrap(class = "Watchcat::Watcher")]
 struct WatchcatWatcher {
     tx: crossbeam_channel::Sender<bool>,
@@ -89,10 +69,9 @@ impl WatchcatWatcher {
                                         .map(|p| p.to_string_lossy().into_owned())
                                         .collect::<Vec<_>>();
 
-                                    match yield_value::<Event, Value>(Event {
-                                        kind: (Self::convert_event_kind(event.kind)),
-                                        paths,
-                                    }) {
+                                    match yield_value::<(u8, Vec<String>), Value>(
+                                        (Self::convert_event_kind(event.kind), paths)
+                                    ) {
                                         Ok(_) => { continue },
                                         Err(e) => {
                                             return Err(e);
@@ -154,11 +133,6 @@ fn init() -> Result<(), Error> {
     watcher_class.define_singleton_method("new", function!(WatchcatWatcher::new, 0))?;
     watcher_class.define_method("watch", method!(WatchcatWatcher::watch, -1))?;
     watcher_class.define_method("close", method!(WatchcatWatcher::close, 0))?;
-
-    let event_class = module.define_class("Event", object())?;
-    event_class.define_singleton_method("new", function!(Event::new, 2))?;
-    event_class.define_method("kind", method!(Event::kind, 0))?;
-    event_class.define_method("paths", method!(Event::paths, 0))?;
 
     Ok(())
 }
