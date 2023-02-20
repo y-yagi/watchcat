@@ -1,4 +1,4 @@
-name: Ruby
+name: CI
 
 on:
   push:
@@ -8,9 +8,9 @@ on:
   pull_request:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
+    name: Test (Ruby ${{ matrix.ruby }})
     strategy:
       matrix:
         ruby:
@@ -25,5 +25,39 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
-    - name: Run the default task
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - uses: Swatinem/rust-cache@v1
+      with:
+        working-directory: ext/watchcat
+
+    - name: Run tests
       run: bundle exec rake
+
+
+  clippy:
+    runs-on: ubuntu-latest
+    name: Clippy
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+          override: true
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: ext/watchcat
+
+      - name: Run Clippy
+        run: cd ext/watchcat && cargo clippy --no-deps -- -D warnings
