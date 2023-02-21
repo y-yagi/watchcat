@@ -7,7 +7,7 @@ module Watchcat
     end
 
     def execute(notification)
-      event = Watchcat::Event.new(notification[0], notification[1])
+      event = Watchcat::Event.new(notification[0], notification[1], notification[2])
       @block.call(event)
     end
   end
