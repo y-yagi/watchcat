@@ -145,7 +145,7 @@ impl WatchcatWatcher {
             EventKind::Modify(_) => 3,
             EventKind::Remove(_) => 4,
             EventKind::Other => 5,
-            EventKind::Any => 99,
+            EventKind::Any => 5,
         }
     }
 }
