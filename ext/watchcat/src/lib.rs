@@ -49,6 +49,7 @@ impl WatchcatWatcher {
 
         let _watcher = match force_polling {
             true => {
+                // TODO: allow to specify wait time by option.
                 let delay = Duration::from_millis(200);
                 let config = notify::Config::default().with_poll_interval(delay);
                 let mut watcher = PollWatcher::new(tx, config)
