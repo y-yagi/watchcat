@@ -64,4 +64,22 @@ class WatchcatTest < Minitest::Test
     w.stop
     FileUtils.remove_entry_secure(@tmpdir)
   end
+
+  def test_watch_directory_with_force_polling
+    @tmpdir = Dir.mktmpdir("watchcat")
+    events = []
+    w = Watchcat.watch(@tmpdir, force_polling: true) { |e| events << e }
+    pid = w.instance_variable_get(:@child_pid)
+    sleep 0.1
+    inotify_count = `cat /proc/#{pid}/fdinfo/* | grep inotify | wc -l`.to_i
+
+    assert_equal 0, inotify_count
+
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.3
+    assert_equal 1, events.count
+  ensure
+    w.stop
+    FileUtils.remove_entry_secure(@tmpdir)
+  end
 end

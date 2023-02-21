@@ -9,8 +9,8 @@ end
 
 module Watchcat
   class << self
-    def watch(paths, recursive: false, &block)
-      w = Watchcat::Executor.new(Array(paths), recursive: recursive, block: block)
+    def watch(paths, recursive: false, force_polling: false, &block)
+      w = Watchcat::Executor.new(Array(paths), recursive: recursive, force_polling: force_polling, block: block)
       w.start
       w
     end

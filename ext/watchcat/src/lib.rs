@@ -6,13 +6,19 @@ use magnus::{
     scan_args::{get_kwargs, scan_args},
     Error, Module, Object, Value,
 };
-use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use std::path::Path;
+use notify::{Config, EventKind, PollWatcher, RecommendedWatcher, RecursiveMode, Watcher};
+use std::{path::Path, time::Duration};
 
 #[magnus::wrap(class = "Watchcat::Watcher")]
 struct WatchcatWatcher {
     tx: crossbeam_channel::Sender<bool>,
     rx: crossbeam_channel::Receiver<bool>,
+}
+
+#[derive(Debug)]
+enum WatcherEnum {
+    Poll(PollWatcher),
+    Recommended(RecommendedWatcher),
 }
 
 impl WatchcatWatcher {
@@ -33,23 +39,40 @@ impl WatchcatWatcher {
             return Err(Error::new(magnus::exception::arg_error(), "no block given"));
         }
 
-        let (pathnames, recursive) = Self::parse_args(args)?;
+        let (pathnames, recursive, force_polling) = Self::parse_args(args)?;
         let (tx, rx) = unbounded();
-        let mut watcher = RecommendedWatcher::new(tx, Config::default())
-            .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
-
         let mode = if recursive {
             RecursiveMode::Recursive
         } else {
             RecursiveMode::NonRecursive
         };
 
-        for pathname in &pathnames {
-            let path = Path::new(pathname);
-            watcher
-                .watch(path, mode)
-                .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
-        }
+        let _watcher = match force_polling {
+            true => {
+                let delay = Duration::from_millis(200);
+                let config = notify::Config::default().with_poll_interval(delay);
+                let mut watcher = PollWatcher::new(tx, config)
+                    .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                for pathname in &pathnames {
+                    let path = Path::new(pathname);
+                    watcher
+                        .watch(path, mode)
+                        .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                };
+                WatcherEnum::Poll(watcher)
+            }
+            false => {
+                let mut watcher = RecommendedWatcher::new(tx, Config::default())
+                    .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                for pathname in &pathnames {
+                    let path = Path::new(pathname);
+                    watcher
+                        .watch(path, mode)
+                        .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                }
+                WatcherEnum::Recommended(watcher)
+            }
+        };
 
         loop {
             select! {
@@ -93,7 +116,7 @@ impl WatchcatWatcher {
     }
 
     #[allow(clippy::let_unit_value)]
-    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool), Error> {
+    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool), Error> {
         let args = scan_args(args)?;
         let (paths,): (Vec<String>,) = args.required;
         let _: () = args.optional;
@@ -101,12 +124,17 @@ impl WatchcatWatcher {
         let _: () = args.trailing;
         let _: () = args.block;
 
-        let kwargs = get_kwargs(args.keywords, &[], &["recursive"])?;
-        let (recursive,): (Option<Option<bool>>,) = kwargs.optional;
+        let kwargs = get_kwargs(args.keywords, &[], &["recursive", "force_polling"])?;
+        let (recursive, force_polling): (Option<Option<bool>>, Option<Option<bool>>) =
+            kwargs.optional;
         let _: () = kwargs.required;
         let _: () = kwargs.splat;
 
-        Ok((paths, recursive.flatten().unwrap_or(false)))
+        Ok((
+            paths,
+            recursive.flatten().unwrap_or(false),
+            force_polling.flatten().unwrap_or(false),
+        ))
     }
 
     fn convert_event_kind(kind: EventKind) -> u8 {
