@@ -91,7 +91,7 @@ impl WatchcatWatcher {
                                         .map(|p| p.to_string_lossy().into_owned())
                                         .collect::<Vec<_>>();
 
-                                    match yield_value::<(u8, Vec<String>, String), Value>(
+                                    match yield_value::<(Vec<String>, Vec<String>, String), Value>(
                                         (Self::convert_event_kind(&event.kind), paths, format!("{:?}", event.kind))
                                     ) {
                                         Ok(_) => { continue },
@@ -138,15 +138,19 @@ impl WatchcatWatcher {
         ))
     }
 
-    fn convert_event_kind(kind: &EventKind) -> u8 {
+    fn convert_event_kind(kind: &EventKind) -> Vec<String> {
+        let mut kinds = Vec::new();
+
         match kind {
-            EventKind::Access(_) => 1,
-            EventKind::Create(_) => 2,
-            EventKind::Modify(_) => 3,
-            EventKind::Remove(_) => 4,
-            EventKind::Other => 5,
-            EventKind::Any => 5,
+            EventKind::Access(_) => kinds.push("access".to_string()),
+            EventKind::Create(_) => kinds.push("create".to_string()),
+            EventKind::Modify(_) => kinds.push("modify".to_string()),
+            EventKind::Remove(_) => kinds.push("remove".to_string()),
+            EventKind::Other => kinds.push("other".to_string()),
+            EventKind::Any => kinds.push("any".to_string()),
         }
+
+        kinds
     }
 }
 
