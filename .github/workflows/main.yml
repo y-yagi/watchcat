@@ -26,11 +26,9 @@ jobs:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
 
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
+    - name: Install Rust (Stable)
+      run:
+        curl https://sh.rustup.rs -sSf | sh -s -- -y
 
     - uses: Swatinem/rust-cache@v1
       with:
@@ -48,12 +46,9 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v1
 
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: clippy
-          override: true
+      - name: Install Rust (Stable)
+        run:
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
 
       - uses: Swatinem/rust-cache@v1
         with:
