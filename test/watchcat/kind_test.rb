@@ -51,7 +51,7 @@ class Watchcat::KindTest < Minitest::Test
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
     sleep 0.1
-    file = FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
     sleep 0.1
 
     assert_equal 2, events.count
