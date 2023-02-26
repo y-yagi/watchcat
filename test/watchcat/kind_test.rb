@@ -114,4 +114,18 @@ class Watchcat::KindTest < Minitest::Test
     assert events[1].kind.access.close?
     assert events[1].kind.access.write_mode?
   end
+
+  def test_chmod_file
+    file = FileUtils.touch(File.join(@tmpdir, "a.txt"))[0]
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    sleep 0.1
+    FileUtils.chmod(0644, file)
+    sleep 0.1
+
+    assert_equal 1, events.count
+    assert events[0].kind.modify?
+    assert events[0].kind.modify.metadata?
+  end
 end
