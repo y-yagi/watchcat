@@ -63,6 +63,8 @@ class WatchcatTest < Minitest::Test
   end
 
   def test_watch_directory_with_force_polling
+    skip unless RUBY_PLATFORM.match?("linux")
+
     events = []
     @watchcat = Watchcat.watch(@tmpdir, force_polling: true) { |e| events << e }
     pid = @watchcat.instance_variable_get(:@child_pid)
