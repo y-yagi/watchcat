@@ -26,13 +26,11 @@ jobs:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
 
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
+    - name: Install Rust (Stable)
+      run:
+        curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
       with:
         working-directory: ext/watchcat
 
@@ -46,16 +44,13 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
 
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: clippy
-          override: true
+      - name: Install Rust (Stable)
+        run:
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           working-directory: ext/watchcat
 
