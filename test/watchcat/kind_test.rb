@@ -97,4 +97,21 @@ class Watchcat::KindTest < Minitest::Test
     assert events[2].kind.modify.both?
     assert_equal [file, new_file], events[2].paths
   end
+
+  def test_write_to_file
+    file = FileUtils.touch(File.join(@tmpdir, "a.txt"))[0]
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    sleep 0.1
+    system("echo 'a' >> #{file}", exception: true)
+    sleep 0.1
+
+    assert_equal 2, events.count
+    assert events[0].kind.modify?
+    assert events[0].kind.modify.data_change?
+    assert events[1].kind.access?
+    assert events[1].kind.access.close?
+    assert events[1].kind.access.write_mode?
+  end
 end
