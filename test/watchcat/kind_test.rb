@@ -46,4 +46,34 @@ class Watchcat::KindTest < Minitest::Test
     refute event.kind.remove.file?
     assert event.kind.remove.folder?
   end
+
+  def test_create_file
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    sleep 0.1
+    file = FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.1
+
+    assert_equal 2, events.count
+    event = events.first
+    assert event.kind.create?
+    assert event.kind.create.file?
+    refute event.kind.create.folder?
+  end
+
+  def test_create_directory
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    sleep 0.1
+    dir = File.join(@tmpdir, "dir")
+    Dir.mkdir(dir)
+    sleep 0.1
+
+    assert_equal 1, events.count
+    event = events.first
+    assert event.kind.create?
+    refute event.kind.create.file?
+    assert event.kind.create.folder?
+  end
 end
