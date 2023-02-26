@@ -20,6 +20,8 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
+    env:
+      OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
 
     steps:
     - uses: actions/checkout@v3
