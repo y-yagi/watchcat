@@ -48,7 +48,6 @@ class Watchcat::KindTest < Minitest::Test
   end
 
   def test_create_file
-
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
     sleep 0.1
@@ -75,5 +74,27 @@ class Watchcat::KindTest < Minitest::Test
     assert event.kind.create?
     refute event.kind.create.file?
     assert event.kind.create.folder?
+  end
+
+  def test_mv_file
+    file = FileUtils.touch(File.join(@tmpdir, "a.txt"))[0]
+    new_file = File.join(@tmpdir, "b.txt")
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    sleep 0.1
+    File.rename(file, new_file)
+    sleep 0.1
+
+    assert_equal 3, events.count
+    assert events[0].kind.modify?
+    assert events[0].kind.modify.from?
+    assert_equal [file], events[0].paths
+    assert events[1].kind.modify?
+    assert events[1].kind.modify.to?
+    assert_equal [new_file], events[1].paths
+    assert events[2].kind.modify?
+    assert events[2].kind.modify.both?
+    assert_equal [file, new_file], events[2].paths
   end
 end
