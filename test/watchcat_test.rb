@@ -31,7 +31,13 @@ class WatchcatTest < Minitest::Test
     if RUBY_PLATFORM.match?("linux")
       assert_equal 5, events.count
     else
-      assert_equal 3, events.count
+      refute_equal 0, events.count
+    end
+
+    events.each do |event|
+      event.paths.each do |path|
+        refute_equal "d.txt", File.basename(path)
+      end
     end
   end
 

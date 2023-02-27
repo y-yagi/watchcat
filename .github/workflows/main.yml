@@ -37,7 +37,7 @@ jobs:
 
     - uses: Swatinem/rust-cache@v2
       with:
-        working-directory: ext/watchcat
+        workspaces: ext/watchcat
 
     - name: Run tests
       run: bundle exec rake
@@ -57,7 +57,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          working-directory: ext/watchcat
+          workspaces: ext/watchcat
 
       - name: Run Clippy
         run: cd ext/watchcat && cargo clippy --no-deps -- -D warnings
