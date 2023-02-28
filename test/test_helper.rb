@@ -4,4 +4,7 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "watchcat"
 require "debug"
 
+require 'minitest/retry'
+Minitest::Retry.use!
+
 require "minitest/autorun"
