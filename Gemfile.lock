@@ -27,8 +27,8 @@ PLATFORMS
 
 DEPENDENCIES
   debug
-  minitest (~> 5.0)
-  rake (~> 13.0)
+  minitest
+  rake
   rake-compiler
   watchcat!
 
