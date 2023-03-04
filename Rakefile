@@ -1,12 +1,15 @@
 # frozen_string_literal: true
 
 require "rake/testtask"
-require "rake/extensiontask"
+require "rb_sys/extensiontask"
 
 task default: :test
 
-Rake::ExtensionTask.new("watchcat") do |c|
-  c.lib_dir = "lib/watchcat"
+GEMSPEC = Gem::Specification.load("watchcat.gemspec")
+RbSys::ExtensionTask.new("watchcat", GEMSPEC) do |ext|
+  ext.lib_dir = "lib/watchcat"
+  ext.cross_compile = true
+  ext.cross_platform = %w[x86_64-linux aarch64-linux x86_64-darwin arm64-darwin]
 end
 
 Rake::TestTask.new do |t|
