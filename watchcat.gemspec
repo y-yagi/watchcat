@@ -8,8 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["Yuji Yaginuma"]
   spec.email = ["yuuji.yaginuma@gmail.com"]
 
-  spec.summary = "Write a short summary, because RubyGems requires one."
-  spec.description = "Write a longer description or delete this line."
+  spec.summary = "Simple filesystem notification library for Ruby. "
   spec.homepage = "https://github.com/y-yagi/watchcat"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0.0"
