@@ -13,11 +13,11 @@ GEM
     io-console (0.6.0)
     irb (1.6.2)
       reline (>= 0.3.0)
-    minitest (5.16.3)
+    minitest (5.18.0)
     minitest-retry (0.2.2)
       minitest (>= 5.0)
     rake (13.0.6)
-    rake-compiler (1.2.0)
+    rake-compiler (1.2.1)
       rake
     rb_sys (0.9.65)
     reline (0.3.2)
