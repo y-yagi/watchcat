@@ -41,7 +41,7 @@ sleep
 
 | Name                       | Description                              | Default           |
 | -------------------------- | -----------------------------------------| ----------------- |
-| **recursive**              | Watch a directory recursively or not.    | `false`           |
+| **recursive**              | Watch a directory recursively or not.    | `true`            |
 | **force_polling**          | Force to use a polling to watch.         | `false`           |
 
 
