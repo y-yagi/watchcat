@@ -15,6 +15,8 @@ Rake::TestTask.new do |t|
   t.libs << "lib"
   t.deps << :compile
   t.test_files = FileList[File.expand_path("test/**/*_test.rb", __dir__)]
+  t.warning = true
+  t.verbose = true
 end
 
 task console: :compile do
