@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "watchcat"
+
+w = Watchcat.watch("/tmp/target") do |e|
+  if e.kind.create?
+    if e.kind.create.file?
+      puts "'#{e.paths[0]}'(File) is added."
+    elsif e.kind.create.folder?
+      puts "'#{e.paths[0]}'(Folder) is added."
+    end
+  elsif e.kind.modify?
+    if e.kind.modify.data_change?
+      puts "'#{e.paths[0]}' is updated."
+    end
+  elsif e.kind.remove?
+    if e.kind.remove.file?
+      puts "'#{e.paths[0]}'(File) is removed."
+    elsif e.kind.remove.folder?
+      puts "'#{e.paths[0]}'(Folder) is removed."
+    end
+  end
+end
+
+# Don't forget to call `stop`.
+at_exit { w.stop }
+
+sleep

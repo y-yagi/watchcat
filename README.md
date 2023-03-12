@@ -27,8 +27,8 @@ Please specify a filename or directory and callback block to `Watchcat.watch`. T
 ```ruby
 require "watchcat"
 
-w = Watchcat.watch("/tmp/text.txt") do |e|
-  pp e.kind, e.paths
+w = Watchcat.watch("/tmp/test") do |e|
+  pp e.paths, e.kind
 end
 
 # Don't forget to call `stop`.
@@ -36,6 +36,60 @@ at_exit { w.stop }
 
 sleep
 ```
+
+The value that is passed to the callback holds the paths that changed and the file change event. For example, if a file is created under the `/tmp/test`, you will get the following output.
+
+```
+["/tmp/test/a.txt"]
+#<Watchcat::EventKind:0x00007f84be7161d8 @access=nil, @create=#<Watchcat::CreateKind:0x00007f84b99eaa08 @kind="file">, @modify=nil, @remove=nil>
+["/tmp/test/a.txt"]
+#<Watchcat::EventKind:0x00007f84be7159b8
+ @access=nil,
+ @create=nil,
+ @modify=#<Watchcat::ModifyKind:0x00007f84be715968 @data_change=nil, @kind="metadata", @metadata=#<Watchcat::MetadataKind:0x00007f84b99e7a60 @kind=nil>, @rename=nil>,
+ @remove=nil>
+["/tmp/test/a.txt"]
+#<Watchcat::EventKind:0x00007f84be714dd8
+ @access=#<Watchcat::AccessKind:0x00007f84b99e3708 @access_mode=#<Watchcat::AccessMode:0x00007f84b99e3640 @mode="write">, @kind="close">,
+ @create=nil,
+ @modify=nil,
+ @remove=nil>
+```
+
+You can know what event is happened with `Watchcat::EventKind`. For example, what a file is changed or not, you can check with `Watchcat::EventKind#modify?`. Seed the following example for details.
+
+```ruby
+require "watchcat"
+
+w = Watchcat.watch("/tmp/target") do |e|
+  if e.kind.create?
+    if e.kind.create.file?
+      puts "'#{e.paths[0]}'(File) is added."
+    elsif e.kind.create.folder?
+      puts "'#{e.paths[0]}'(Folder) is added."
+    end
+  elsif e.kind.modify?
+    if e.kind.modify.data_change?
+      puts "'#{e.paths[0]}' is updated."
+    end
+  elsif e.kind.remove?
+    if e.kind.remove.file?
+      puts "'#{e.paths[0]}'(File) is removed."
+    elsif e.kind.remove.folder?
+      puts "'#{e.paths[0]}'(Folder) is removed."
+    end
+  end
+end
+
+# Don't forget to call `stop`.
+at_exit { w.stop }
+
+sleep
+```
+
+
+**CAUTION** The `watchcat` doesn't normalize the events. So the result might change per the platform.
+
 
 ### Options
 
