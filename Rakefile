@@ -2,6 +2,7 @@
 
 require "rake/testtask"
 require "rb_sys/extensiontask"
+require "bundler/gem_tasks"
 
 task default: :test
 
