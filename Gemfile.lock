@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    watchcat (0.0.1)
+    watchcat (0.1.0)
       rb_sys
 
 GEM
@@ -19,7 +19,7 @@ GEM
     rake (13.0.6)
     rake-compiler (1.2.1)
       rake
-    rb_sys (0.9.65)
+    rb_sys (0.9.67)
     reline (0.3.2)
       io-console (~> 0.5)
 
