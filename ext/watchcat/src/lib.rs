@@ -53,6 +53,7 @@ impl WatchcatWatcher {
             RecursiveMode::NonRecursive
         };
 
+        // This variable is needed to keep `watcher` active.
         let _watcher = match force_polling {
             true => {
                 // TODO: allow to specify wait time by option.
