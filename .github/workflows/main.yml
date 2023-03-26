@@ -25,23 +25,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
+
+    - name: Set up Ruby & Rust
+      uses: oxidize-rb/actions/setup-ruby-and-rust@v1
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
+        cargo-cache: true
 
-    - name: Install Rust (Stable)
-      run:
-        curl https://sh.rustup.rs -sSf | sh -s -- -y
-
-    - uses: Swatinem/rust-cache@v2
-      with:
-        workspaces: ext/watchcat
-
-    - name: Run tests
+    - name: Run test
       run: bundle exec rake
-
 
   clippy:
     runs-on: ubuntu-latest
@@ -51,13 +44,12 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Install Rust (Stable)
-        run:
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-
-      - uses: Swatinem/rust-cache@v2
+      - name: Set up Ruby & Rust
+        uses: oxidize-rb/actions/setup-ruby-and-rust@v1
         with:
-          workspaces: ext/watchcat
+          ruby-version: '3.2'
+          bundler-cache: true
+          cargo-cache: true
 
       - name: Run Clippy
         run: cd ext/watchcat && cargo clippy --no-deps -- -D warnings
