@@ -97,12 +97,9 @@ impl WatchcatWatcher {
                                         .map(|p| p.to_string_lossy().into_owned())
                                         .collect::<Vec<_>>();
 
-                                    match yield_value::<(Vec<String>, Vec<String>, String), Value>(
+                                    yield_value::<(Vec<String>, Vec<String>, String), Value>(
                                         (Self::convert_event_kind(&event.kind), paths, format!("{:?}", event.kind))
-                                    ) {
-                                        Ok(_) => { continue },
-                                        Err(e) => { return Err(e); }
-                                    }
+                                    )?;
                                 }
                                 Err(e) => {
                                     return Err(
