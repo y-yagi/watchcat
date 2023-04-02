@@ -47,7 +47,6 @@ jobs:
       - name: Set up Ruby & Rust
         uses: oxidize-rb/actions/setup-ruby-and-rust@v1
         with:
-          ruby-version: '3.2'
           bundler-cache: true
           cargo-cache: true
 
