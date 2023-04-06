@@ -45,7 +45,7 @@ impl WatchcatWatcher {
             return Err(Error::new(magnus::exception::arg_error(), "no block given"));
         }
 
-        let (pathnames, recursive, force_polling) = Self::parse_args(args)?;
+        let (pathnames, recursive, force_polling, poll_interval) = Self::parse_args(args)?;
         let (tx, rx) = unbounded();
         let mode = if recursive {
             RecursiveMode::Recursive
@@ -56,8 +56,7 @@ impl WatchcatWatcher {
         // This variable is needed to keep `watcher` active.
         let _watcher = match force_polling {
             true => {
-                // TODO: allow to specify wait time by option.
-                let delay = Duration::from_millis(200);
+                let delay = Duration::from_millis(poll_interval);
                 let config = notify::Config::default().with_poll_interval(delay);
                 let mut watcher = PollWatcher::new(tx, config)
                     .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
@@ -121,7 +120,7 @@ impl WatchcatWatcher {
     }
 
     #[allow(clippy::let_unit_value)]
-    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool), Error> {
+    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64), Error> {
         let args = scan_args(args)?;
         let (paths,): (Vec<String>,) = args.required;
         let _: () = args.optional;
@@ -129,8 +128,8 @@ impl WatchcatWatcher {
         let _: () = args.trailing;
         let _: () = args.block;
 
-        let kwargs = get_kwargs(args.keywords, &[], &["recursive", "force_polling"])?;
-        let (recursive, force_polling): (Option<Option<bool>>, Option<Option<bool>>) =
+        let kwargs = get_kwargs(args.keywords, &[], &["recursive", "force_polling", "poll_interval"])?;
+        let (recursive, force_polling, poll_interval): (Option<Option<bool>>, Option<Option<bool>>, Option<Option<u64>>) =
             kwargs.optional;
         let _: () = kwargs.required;
         let _: () = kwargs.splat;
@@ -139,6 +138,7 @@ impl WatchcatWatcher {
             paths,
             recursive.flatten().unwrap_or(false),
             force_polling.flatten().unwrap_or(false),
+            poll_interval.flatten().unwrap_or(200),
         ))
     }
 

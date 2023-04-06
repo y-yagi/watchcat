@@ -35,9 +35,7 @@ class WatchcatTest < Minitest::Test
     end
 
     events.each do |event|
-      event.paths.each do |path|
-        refute_equal "d.txt", File.basename(path)
-      end
+      event.paths.each { |path| refute_equal "d.txt", File.basename(path) }
     end
   end
 
@@ -91,6 +89,27 @@ class WatchcatTest < Minitest::Test
 
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
     sleep 0.5
+    refute_equal 0, events.count
+  end
+
+  def test_watch_directory_with_poll_interval
+    skip unless RUBY_PLATFORM.match?("linux")
+
+    events = []
+    @watchcat =
+      Watchcat.watch(@tmpdir, force_polling: true, poll_interval: 1000) do |e|
+        events << e
+      end
+    pid = @watchcat.instance_variable_get(:@child_pid)
+    sleep 0.2
+    inotify_count = `cat /proc/#{pid}/fdinfo/* | grep inotify | wc -l`.to_i
+
+    assert_equal 0, inotify_count
+
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.2
+    assert_equal 0, events.count
+    sleep 1
     refute_equal 0, events.count
   end
 end
