@@ -13,15 +13,24 @@ GEM
     io-console (0.6.0)
     irb (1.6.2)
       reline (>= 0.3.0)
+    language_server-protocol (3.17.0.3)
     minitest (5.18.0)
     minitest-retry (0.2.2)
       minitest (>= 5.0)
+    prettier_print (1.2.1)
     rake (13.0.6)
     rake-compiler (1.2.1)
       rake
     rb_sys (0.9.67)
     reline (0.3.2)
       io-console (~> 0.5)
+    ruby-lsp (0.4.3)
+      language_server-protocol (~> 3.17.0)
+      sorbet-runtime
+      syntax_tree (>= 6.1.1, < 7)
+    sorbet-runtime (0.5.10751)
+    syntax_tree (6.1.1)
+      prettier_print (>= 1.2.0)
 
 PLATFORMS
   x86_64-darwin-19
@@ -34,6 +43,7 @@ DEPENDENCIES
   minitest-retry
   rake
   rake-compiler
+  ruby-lsp
   watchcat!
 
 BUNDLED WITH
