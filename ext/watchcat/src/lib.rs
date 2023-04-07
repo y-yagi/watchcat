@@ -121,6 +121,9 @@ impl WatchcatWatcher {
 
     #[allow(clippy::let_unit_value)]
     fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64), Error> {
+        type KwArgBool = Option<Option<bool>>;
+        type KwArgU64 = Option<Option<u64>>;
+
         let args = scan_args(args)?;
         let (paths,): (Vec<String>,) = args.required;
         let _: () = args.optional;
@@ -128,8 +131,12 @@ impl WatchcatWatcher {
         let _: () = args.trailing;
         let _: () = args.block;
 
-        let kwargs = get_kwargs(args.keywords, &[], &["recursive", "force_polling", "poll_interval"])?;
-        let (recursive, force_polling, poll_interval): (Option<Option<bool>>, Option<Option<bool>>, Option<Option<u64>>) =
+        let kwargs = get_kwargs(
+            args.keywords,
+            &[],
+            &["recursive", "force_polling", "poll_interval"],
+        )?;
+        let (recursive, force_polling, poll_interval): (KwArgBool, KwArgBool, KwArgU64) =
             kwargs.optional;
         let _: () = kwargs.required;
         let _: () = kwargs.splat;
