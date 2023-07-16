@@ -2,7 +2,7 @@ require "watchcat/kind"
 
 module Watchcat
   class Event
-    attr_reader :kind, :paths, :raw_kind
+    attr_reader :kind, :paths, :raw_kind, :event
 
     def initialize(kinds, paths, raw_kind)
       @paths = paths
@@ -10,13 +10,17 @@ module Watchcat
       build_kind(kinds)
     end
 
+    def deconstruct_keys(_keys)
+      { paths: @paths, event: @event }
+    end
+
     private
 
     def build_kind(kinds)
       @kind = Watchcat::EventKind.new
-      event_kind = kinds.shift
-      @kind.public_send("#{event_kind}=", Object.const_get("Watchcat::#{event_kind.capitalize}Kind").new)
-      send("build_#{event_kind}_kind", kinds)
+      @event = kinds.shift
+      @kind.public_send("#{event}=", Object.const_get("Watchcat::#{event.capitalize}Kind").new)
+      send("build_#{event}_kind", kinds)
     end
 
     def build_access_kind(kinds)
