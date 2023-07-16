@@ -112,4 +112,26 @@ class WatchcatTest < Minitest::Test
     sleep 1
     refute_equal 0, events.count
   end
+
+  def test_match_event
+    skip unless RUBY_PLATFORM.match?("linux")
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir) do |e|
+      case e
+      in event: "create", paths: ["#{File.join(@tmpdir, "a.txt")}"]
+        events << e
+      else
+        # Do nothing.
+      end
+    end
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+
+    sleep 0.2
+    assert_equal 1, events.count
+  end
 end
