@@ -7,8 +7,6 @@ require "ruby_memcheck"
 
 task default: :test
 
-RubyMemcheck.config(binary_name: "watchcat")
-
 GEMSPEC = Gem::Specification.load("watchcat.gemspec")
 RbSys::ExtensionTask.new("watchcat", GEMSPEC) do |ext|
   ext.lib_dir = "lib/watchcat"
