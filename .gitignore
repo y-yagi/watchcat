@@ -8,3 +8,4 @@
 /tmp/
 *.so
 /target
+.ruby-version
