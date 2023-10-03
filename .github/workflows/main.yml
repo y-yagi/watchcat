@@ -53,3 +53,20 @@ jobs:
 
       - name: Run Clippy
         run: cd ext/watchcat && cargo clippy --no-deps -- -D warnings
+
+  miri:
+    runs-on: ubuntu-latest
+    name: Miri
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install Miri
+        run: |
+          rustup toolchain install nightly --component miri
+          rustup override set nightly
+          cargo miri setup
+
+      - name: Run miri
+        run: cd ext/watchcat && cargo miri test
