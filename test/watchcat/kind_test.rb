@@ -18,11 +18,11 @@ class Watchcat::KindTest < Minitest::Test
     file = FileUtils.touch(File.join(@tmpdir, "a.txt"))
 
     events = []
-    sleep 0.2
+    sleep 0.4
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
-    sleep 0.2
+    sleep 0.4
     FileUtils.remove(file)
-    sleep 0.2
+    sleep 0.4
 
     if RUBY_PLATFORM.match?("linux")
       assert_equal 1, events.count
@@ -41,11 +41,11 @@ class Watchcat::KindTest < Minitest::Test
     Dir.mkdir(dir)
 
     events = []
-    sleep 0.2
+    sleep 0.4
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
-    sleep 0.2
+    sleep 0.4
     FileUtils.remove_dir(dir)
-    sleep 0.2
+    sleep 0.4
 
     if RUBY_PLATFORM.match?("linux")
       assert_equal 1, events.count
@@ -61,9 +61,9 @@ class Watchcat::KindTest < Minitest::Test
   def test_create_file
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
-    sleep 0.2
+    sleep 0.4
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
-    sleep 0.2
+    sleep 0.4
 
     if RUBY_PLATFORM.match?("linux")
       assert_equal 2, events.count
@@ -79,10 +79,10 @@ class Watchcat::KindTest < Minitest::Test
   def test_create_directory
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
-    sleep 0.2
+    sleep 0.4
     dir = File.join(@tmpdir, "dir")
     Dir.mkdir(dir)
-    sleep 0.2
+    sleep 0.4
 
     assert_equal 1, events.count
     event = events.first
@@ -96,11 +96,11 @@ class Watchcat::KindTest < Minitest::Test
     new_file = File.join(@tmpdir, "b.txt")
 
     events = []
-    sleep 0.2
+    sleep 0.4
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
-    sleep 0.2
+    sleep 0.4
     File.rename(file, new_file)
-    sleep 0.2
+    sleep 0.4
 
     assert_equal 3, events.count
     if RUBY_PLATFORM.match?("linux")
@@ -130,11 +130,11 @@ class Watchcat::KindTest < Minitest::Test
     file = FileUtils.touch(File.join(@tmpdir, "a.txt"))[0]
 
     events = []
-    sleep 0.2
+    sleep 0.4
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
-    sleep 0.2
+    sleep 0.4
     system("echo 'a' >> #{file}", exception: true)
-    sleep 0.2
+    sleep 0.4
 
     assert_equal 2, events.count
     if RUBY_PLATFORM.match?("linux")
@@ -156,11 +156,11 @@ class Watchcat::KindTest < Minitest::Test
     file = FileUtils.touch(File.join(@tmpdir, "a.txt"))[0]
 
     events = []
-    sleep 0.2
+    sleep 0.4
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
-    sleep 0.2
+    sleep 0.4
     FileUtils.chmod(0644, file)
-    sleep 0.2
+    sleep 0.4
 
     if RUBY_PLATFORM.match?("linux")
       assert_equal 1, events.count

@@ -18,15 +18,15 @@ class WatchcatTest < Minitest::Test
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
 
-    sleep 0.2
+    sleep 0.4
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
-    sleep 0.3
+    sleep 0.6
     FileUtils.touch(File.join(@tmpdir, "b.txt"))
-    sleep 0.3
+    sleep 0.6
     sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))
-    sleep 0.3
+    sleep 0.6
     FileUtils.touch(File.join(sub_dir, "d.txt"))
-    sleep 0.3
+    sleep 0.6
 
     if RUBY_PLATFORM.match?("linux")
       assert_equal 5, events.count
@@ -43,15 +43,15 @@ class WatchcatTest < Minitest::Test
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
 
-    sleep 0.2
+    sleep 0.4
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
-    sleep 0.2
+    sleep 0.4
     FileUtils.touch(File.join(@tmpdir, "b.txt"))
-    sleep 0.2
+    sleep 0.4
     sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))
-    sleep 0.2
+    sleep 0.4
     FileUtils.touch(File.join(sub_dir, "d.txt"))
-    sleep 0.2
+    sleep 0.4
 
     if RUBY_PLATFORM.match?("linux")
       assert_equal 7, events.count
@@ -67,12 +67,12 @@ class WatchcatTest < Minitest::Test
     events = []
     @watchcat = Watchcat.watch(file) { |e| events << e }
 
-    sleep 0.2
+    sleep 0.4
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
-    sleep 0.2
+    sleep 0.4
     FileUtils.touch(File.join(@tmpdir, "b.txt"))
 
-    sleep 0.2
+    sleep 0.4
     assert_equal 1, events.count
   end
 
