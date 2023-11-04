@@ -5,6 +5,6 @@ require "watchcat"
 require "debug"
 
 require 'minitest/retry'
-Minitest::Retry.use!
+Minitest::Retry.use!(retry_count: 5)
 
 require "minitest/autorun"

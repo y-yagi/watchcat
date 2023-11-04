@@ -78,16 +78,19 @@ impl WatchcatWatcher {
             }
         };
 
+        println!("DEBUG: starting loop");
         loop {
             select! {
                 recv(self.rx) -> _res => {
                     return Ok(true)
                 }
                 recv(rx) -> res => {
+                                    println!("DEBUG: res - {:?}", res);
                     match res {
                         Ok(event) => {
                             match event {
                                 Ok(event) => {
+                                    println!("DEBUG: event - {:?}", event);
                                     let paths = event
                                         .paths
                                         .iter()
