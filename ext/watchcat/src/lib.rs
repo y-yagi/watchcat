@@ -85,12 +85,10 @@ impl WatchcatWatcher {
                     return Ok(true)
                 }
                 recv(rx) -> res => {
-                                    println!("DEBUG: res - {:?}", res);
                     match res {
                         Ok(event) => {
                             match event {
                                 Ok(event) => {
-                                    println!("DEBUG: event - {:?}", event);
                                     let paths = event
                                         .paths
                                         .iter()
