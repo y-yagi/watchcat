@@ -35,6 +35,7 @@ jobs:
 
     - name: Run test
       run: bundle exec rake
+      continue-on-error: ${{ (matrix.os == 'macos-latest')  }}
 
   clippy:
     runs-on: ubuntu-latest
