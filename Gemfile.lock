@@ -7,12 +7,13 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    debug (1.8.0)
-      irb (>= 1.5.0)
-      reline (>= 0.3.1)
+    debug (1.9.0)
+      irb (~> 1.10)
+      reline (>= 0.3.8)
     io-console (0.6.0)
-    irb (1.6.4)
-      reline (>= 0.3.0)
+    irb (1.10.1)
+      rdoc
+      reline (>= 0.3.8)
     minitest (5.20.0)
     minitest-retry (0.2.2)
       minitest (>= 5.0)
@@ -20,15 +21,20 @@ GEM
       racc (~> 1.4)
     nokogiri (1.15.4-x86_64-linux)
       racc (~> 1.4)
+    psych (5.1.1.1)
+      stringio
     racc (1.7.3)
     rake (13.1.0)
     rake-compiler (1.2.5)
       rake
     rb_sys (0.9.83)
-    reline (0.3.4)
+    rdoc (6.6.1)
+      psych (>= 4.0.0)
+    reline (0.4.1)
       io-console (~> 0.5)
     ruby_memcheck (2.2.1)
       nokogiri
+    stringio (3.1.0)
 
 PLATFORMS
   x86_64-darwin-19
