@@ -8,7 +8,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-crossbeam-channel = "0.5.10"
+crossbeam-channel = "0.5.11"
 magnus = "0.6"
 notify = "6.1.1"
 rb-sys = "0.9.86"
