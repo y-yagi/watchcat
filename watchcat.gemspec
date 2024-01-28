@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
   spec.extensions = ["ext/watchcat/extconf.rb"]
 
   spec.add_dependency "rb_sys"
+  spec.add_dependency "drb"
   spec.add_development_dependency "debug"
   spec.add_development_dependency "minitest"
   spec.add_development_dependency "minitest-retry"
