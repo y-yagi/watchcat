@@ -20,7 +20,9 @@ struct WatchcatWatcher {
 
 #[derive(Debug)]
 enum WatcherEnum {
+    #[allow(dead_code)]
     Poll(PollWatcher),
+    #[allow(dead_code)]
     Recommended(RecommendedWatcher),
 }
 
