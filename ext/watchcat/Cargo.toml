@@ -11,4 +11,4 @@ crate-type = ["cdylib"]
 crossbeam-channel = "0.5.12"
 magnus = "0.6"
 notify = "6.1.1"
-rb-sys = "0.9.90"
+rb-sys = "0.9.91"
