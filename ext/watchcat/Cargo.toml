@@ -9,6 +9,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 crossbeam-channel = "0.5.13"
-magnus = "0.6"
+magnus = "0.7"
 notify = "6.1.1"
 rb-sys = "0.9.97"
