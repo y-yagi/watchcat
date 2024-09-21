@@ -17,7 +17,7 @@ GEM
       rdoc
       reline (>= 0.4.2)
     minitest (5.25.1)
-    minitest-retry (0.2.2)
+    minitest-retry (0.2.3)
       minitest (>= 5.0)
     nokogiri (1.16.4-arm64-darwin)
       racc (~> 1.4)
