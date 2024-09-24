@@ -95,7 +95,7 @@ impl WatchcatWatcher {
                                         .iter()
                                         .map(|p| p.to_string_lossy().into_owned())
                                         .collect::<Vec<_>>();
-
+                                    println!("DEBUG: {:?}", event);
                                     yield_value::<(Vec<String>, Vec<String>, String), Value>(
                                         (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
                                     )?;
@@ -108,6 +108,7 @@ impl WatchcatWatcher {
                             }
                         }
                         Err(e) => {
+                            println!("DEBUG(err): {:?}", e);
                             return Err(
                                 Error::new(magnus::exception::runtime_error(), e.to_string())
                             )
