@@ -4,3 +4,4 @@ members = ["ext/watchcat"]
 
 [profile.release]
 codegen-units = 1 # more llvm optimizations
+strip = true
