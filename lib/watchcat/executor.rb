@@ -1,13 +1,9 @@
-require "drb"
-require "drb/unix"
-require_relative "server"
 require_relative "client"
 
 module Watchcat
   class Executor
     def initialize(paths, recursive:, force_polling:, poll_interval:, block:)
-      @service = nil
-      @child_pid = nil
+      @th = nil
       @paths = paths
       @recursive = recursive
       @force_polling = force_polling
@@ -16,26 +12,21 @@ module Watchcat
     end
 
     def start
-      server = Server.new(@block)
-      @service = DRb.start_service("drbunix:", server)
-      @child_pid =
-        fork do
-          Process.setproctitle("watchcat: watcher")
-          client =
-            Client.new(
-              @service.uri,
-              paths: @paths,
-              recursive: @recursive,
-              force_polling: @force_polling,
-              poll_interval: @poll_interval
-            )
-          client.run
-        end
+      @th = Thread.new do
+        client =
+          Client.new(
+            paths: @paths,
+            recursive: @recursive,
+            force_polling: @force_polling,
+            poll_interval: @poll_interval,
+            callback: @block
+          )
+        client.run
+      end
     end
 
     def stop
-      Process.kill(:KILL, @child_pid)
-      @service.stop_service
+      @th.kill
     end
   end
 end

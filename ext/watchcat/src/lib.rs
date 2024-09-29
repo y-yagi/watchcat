@@ -1,4 +1,4 @@
-use crossbeam_channel::{select, unbounded};
+use crossbeam_channel::{select, unbounded, Receiver, bounded};
 use magnus::{
     block::{block_given, yield_value},
     class::object,
@@ -37,6 +37,15 @@ impl WatchcatWatcher {
 
     fn close(&self) {
         self.tx.send(true).unwrap()
+    }
+
+    fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
+        let (sender, receiver) = bounded(100);
+        ctrlc::set_handler(move || {
+            let _ = sender.send(());
+        })?;
+
+        Ok(receiver)
     }
 
     fn watch(&self, args: &[Value]) -> Result<bool, Error> {
@@ -80,6 +89,8 @@ impl WatchcatWatcher {
             }
         };
 
+        let ctrl_c_events = Self::ctrl_channel().map_err(|e| Error::new(magnus::exception::exception(), e.to_string()))?;
+
         loop {
             select! {
                 recv(self.rx) -> _res => {
@@ -113,6 +124,10 @@ impl WatchcatWatcher {
                             )
                         }
                     }
+                }
+                recv(ctrl_c_events) -> _ => {
+                    println!("Goodbye!");
+                    return Ok(true);
                 }
             }
         }

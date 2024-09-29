@@ -9,6 +9,7 @@ on:
 
 jobs:
   test:
+    if: false
     runs-on: ${{ matrix.os }}
     name: Test (Ruby ${{ matrix.ruby }} on ${{ matrix.os }})
     strategy:

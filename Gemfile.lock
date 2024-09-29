@@ -2,7 +2,6 @@ PATH
   remote: .
   specs:
     watchcat (0.1.0)
-      drb
       rb_sys
 
 GEM
@@ -11,7 +10,6 @@ GEM
     debug (1.9.2)
       irb (~> 1.10)
       reline (>= 0.3.8)
-    drb (2.2.1)
     io-console (0.7.2)
     irb (1.14.0)
       rdoc (>= 4.0.0)

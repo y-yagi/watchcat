@@ -1,13 +1,14 @@
+require "watchcat/event"
+
 module Watchcat
   class Client
-    def initialize(uri, paths:, recursive:, force_polling:, poll_interval:)
-      DRb.start_service
+    def initialize(paths:, recursive:, force_polling:, poll_interval:, callback:)
       @watcher = Watchcat::Watcher.new
-      @server = DRbObject.new_with_uri(uri)
       @paths = paths
       @recursive = recursive
       @force_polling = force_polling
       @poll_interval = poll_interval
+      @callback = callback
     end
 
     def run
@@ -16,7 +17,10 @@ module Watchcat
         recursive: @recursive,
         force_polling: @force_polling,
         poll_interval: @poll_interval
-      ) { |notification| @server.execute(notification) }
+      ) do |notification|
+        event = Watchcat::Event.new(notification[0], notification[1], notification[2])
+        @callback.call(event)
+      end
     end
   end
 end
