@@ -29,3 +29,7 @@ end
 task console: :compile do
   ruby "bin/console"
 end
+
+task example: :compile do
+  ruby "bin/example"
+end
