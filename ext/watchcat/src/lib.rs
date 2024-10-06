@@ -40,6 +40,7 @@ impl WatchcatWatcher {
     }
 
     fn watch(&self, args: &[Value]) -> Result<bool, Error> {
+        print!("start watch\n");
         if !block_given() {
             return Err(Error::new(magnus::exception::arg_error(), "no block given"));
         }
@@ -80,12 +81,14 @@ impl WatchcatWatcher {
             }
         };
 
+        print!("start loop\n");
         loop {
             select! {
                 recv(self.rx) -> _res => {
                     return Ok(true)
                 }
                 recv(rx) -> res => {
+                    print!("get event: {:?}", res);
                     match res {
                         Ok(event) => {
                             match event {
