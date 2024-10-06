@@ -18,17 +18,16 @@ module Watchcat
     def start
       server = Server.new(@block)
       @service = DRb.start_service("drbunix:", server)
+      client = Client.new(
+        @service.uri,
+        paths: @paths,
+        recursive: @recursive,
+        force_polling: @force_polling,
+        poll_interval: @poll_interval
+      )
       @child_pid =
         fork do
           Process.setproctitle("watchcat: watcher")
-          client =
-            Client.new(
-              @service.uri,
-              paths: @paths,
-              recursive: @recursive,
-              force_polling: @force_polling,
-              poll_interval: @poll_interval
-            )
           client.run
         end
     end
