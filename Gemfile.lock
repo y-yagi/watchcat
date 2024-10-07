@@ -29,7 +29,7 @@ GEM
       stringio
     racc (1.8.1)
     rake (13.2.1)
-    rake-compiler (1.2.7)
+    rake-compiler (1.2.8)
       rake
     rb_sys (0.9.102)
     rdoc (6.7.0)
