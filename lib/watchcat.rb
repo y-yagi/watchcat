@@ -14,6 +14,7 @@ module Watchcat
       recursive: true,
       force_polling: false,
       poll_interval: nil,
+      wait_until_startup: false,
       &block
     )
       w =
@@ -22,6 +23,7 @@ module Watchcat
           recursive: recursive,
           force_polling: force_polling,
           poll_interval: poll_interval,
+          wait_until_startup: wait_until_startup,
           block: block
         )
       w.start
