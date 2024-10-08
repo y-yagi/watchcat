@@ -19,7 +19,7 @@ class Watchcat::KindTest < Minitest::Test
 
     events = []
     sleep 0.2
-    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false, wait_until_startup: true) { |e| events << e }
     sleep 0.2
     FileUtils.remove(file)
     sleep 0.2
@@ -42,7 +42,7 @@ class Watchcat::KindTest < Minitest::Test
 
     events = []
     sleep 0.2
-    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false, wait_until_startup: true) { |e| events << e }
     sleep 0.2
     FileUtils.remove_dir(dir)
     sleep 0.2
@@ -60,7 +60,7 @@ class Watchcat::KindTest < Minitest::Test
 
   def test_create_file
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false, wait_until_startup: true) { |e| events << e }
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
     sleep 0.2
@@ -78,7 +78,7 @@ class Watchcat::KindTest < Minitest::Test
 
   def test_create_directory
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false, wait_until_startup: true) { |e| events << e }
     sleep 0.2
     dir = File.join(@tmpdir, "dir")
     Dir.mkdir(dir)
@@ -97,7 +97,7 @@ class Watchcat::KindTest < Minitest::Test
 
     events = []
     sleep 0.2
-    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false, wait_until_startup: true) { |e| events << e }
     sleep 0.2
     File.rename(file, new_file)
     sleep 0.2
@@ -131,7 +131,7 @@ class Watchcat::KindTest < Minitest::Test
 
     events = []
     sleep 0.2
-    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false, wait_until_startup: true) { |e| events << e }
     sleep 0.2
     system("echo 'a' >> #{file}", exception: true)
     sleep 0.2
@@ -157,7 +157,7 @@ class Watchcat::KindTest < Minitest::Test
 
     events = []
     sleep 0.2
-    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false, wait_until_startup: true) { |e| events << e }
     sleep 0.2
     FileUtils.chmod(0644, file)
     sleep 0.2

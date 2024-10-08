@@ -20,7 +20,7 @@ jobs:
           - '3.3'
         os:
           - ubuntu-latest
- #         - macos-latest
+          - macos-latest
     env:
       OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
 
@@ -36,7 +36,6 @@ jobs:
 
     - name: Run test
       run: bundle exec rake
-      continue-on-error: ${{ (matrix.os == 'macos-latest')  }}
 
   clippy:
     runs-on: ubuntu-latest
