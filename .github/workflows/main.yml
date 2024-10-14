@@ -51,6 +51,8 @@ jobs:
           bundler-cache: true
           cargo-cache: true
           ruby-version: '3.3'
+          bundler: 'latest'
+          rubygems: 'latest'
 
       - name: Run Clippy
         run: cd ext/watchcat && cargo clippy --no-deps -- -D warnings
