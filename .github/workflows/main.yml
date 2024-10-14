@@ -34,9 +34,6 @@ jobs:
         bundler-cache: true
         cargo-cache: true
 
-    - name: Install the latest bundler
-      run: gem install bundler
-
     - name: Run test
       run: bundle exec rake
 
