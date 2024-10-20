@@ -18,14 +18,6 @@ struct WatchcatWatcher {
     rx: crossbeam_channel::Receiver<bool>,
 }
 
-#[derive(Debug)]
-enum WatcherEnum {
-    #[allow(dead_code)]
-    Poll(PollWatcher),
-    #[allow(dead_code)]
-    Recommended(RecommendedWatcher),
-}
-
 impl WatchcatWatcher {
     fn new() -> Self {
         let (tx_executor, rx_executor) = unbounded::<bool>();
@@ -52,33 +44,28 @@ impl WatchcatWatcher {
             RecursiveMode::NonRecursive
         };
 
-        // This variable is needed to keep `watcher` active.
-        let _watcher = match force_polling {
+        let mut watcher: Box<dyn Watcher> = match force_polling {
             true => {
                 let delay = Duration::from_millis(poll_interval);
                 let config = notify::Config::default().with_poll_interval(delay);
-                let mut watcher = PollWatcher::new(tx, config)
+                let watcher = PollWatcher::new(tx, config)
                     .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
-                for pathname in &pathnames {
-                    let path = Path::new(pathname);
-                    watcher
-                        .watch(path, mode)
-                        .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
-                }
-                WatcherEnum::Poll(watcher)
+                Box::new(watcher)
             }
             false => {
-                let mut watcher = RecommendedWatcher::new(tx, Config::default())
+                let watcher = RecommendedWatcher::new(tx, Config::default())
                     .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
-                for pathname in &pathnames {
-                    let path = Path::new(pathname);
-                    watcher
-                        .watch(path, mode)
-                        .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
-                }
-                WatcherEnum::Recommended(watcher)
+                Box::new(watcher)
             }
         };
+
+        for pathname in &pathnames {
+            let path = Path::new(pathname);
+            watcher
+                .watch(path, mode)
+                .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+        }
+
 
         loop {
             select! {
