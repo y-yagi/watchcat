@@ -28,7 +28,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Ruby & Rust
-      uses: oxidize-rb/actions/setup-ruby-and-rust@v1
+      uses: oxidize-rb/actions/setup-ruby-and-rust@08e22a43e1771991320b75fe2dfb29d8e3f46668
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
