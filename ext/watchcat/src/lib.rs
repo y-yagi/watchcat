@@ -18,14 +18,6 @@ struct WatchcatWatcher {
     rx: crossbeam_channel::Receiver<bool>,
 }
 
-#[derive(Debug)]
-enum WatcherEnum {
-    #[allow(dead_code)]
-    Poll(PollWatcher),
-    #[allow(dead_code)]
-    Recommended(RecommendedWatcher),
-}
-
 impl WatchcatWatcher {
     fn new() -> Self {
         let (tx_executor, rx_executor) = unbounded::<bool>();
@@ -45,40 +37,80 @@ impl WatchcatWatcher {
         }
 
         let (pathnames, recursive, force_polling, poll_interval) = Self::parse_args(args)?;
-        let (tx, rx) = unbounded();
         let mode = if recursive {
             RecursiveMode::Recursive
         } else {
             RecursiveMode::NonRecursive
         };
 
-        // This variable is needed to keep `watcher` active.
-        let _watcher = match force_polling {
-            true => {
-                let delay = Duration::from_millis(poll_interval);
-                let config = notify::Config::default().with_poll_interval(delay);
-                let mut watcher = PollWatcher::new(tx, config)
-                    .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
-                for pathname in &pathnames {
-                    let path = Path::new(pathname);
-                    watcher
-                        .watch(path, mode)
-                        .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+        if force_polling {
+            self.watch_by_pollwatcher(pathnames, mode, poll_interval)
+        } else {
+            self.watch_by_recommended_watcher(pathnames, mode)
+        }
+    }
+
+    fn watch_by_pollwatcher(&self, pathnames: Vec<String>, mode: RecursiveMode, poll_interval: u64) -> Result<bool, Error> {
+        let (tx, rx) = unbounded();
+       let delay = Duration::from_millis(poll_interval);
+       let config = notify::Config::default().with_poll_interval(delay);
+       let mut watcher = PollWatcher::new(tx, config)
+           .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+       for pathname in &pathnames {
+           let path = Path::new(pathname);
+           watcher
+               .watch(path, mode)
+               .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+       }
+
+        loop {
+            select! {
+                recv(self.rx) -> _res => {
+                    return Ok(true)
                 }
-                WatcherEnum::Poll(watcher)
-            }
-            false => {
-                let mut watcher = RecommendedWatcher::new(tx, Config::default())
-                    .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
-                for pathname in &pathnames {
-                    let path = Path::new(pathname);
-                    watcher
-                        .watch(path, mode)
-                        .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                recv(rx) -> res => {
+                    match res {
+                        Ok(event) => {
+                            match event {
+                                Ok(event) => {
+                                    let paths = event
+                                        .paths
+                                        .iter()
+                                        .map(|p| p.to_string_lossy().into_owned())
+                                        .collect::<Vec<_>>();
+
+                                    yield_value::<(Vec<String>, Vec<String>, String), Value>(
+                                        (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
+                                    )?;
+                                }
+                                Err(e) => {
+                                    return Err(
+                                        Error::new(magnus::exception::runtime_error(), e.to_string())
+                                    )
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            return Err(
+                                Error::new(magnus::exception::runtime_error(), e.to_string())
+                            )
+                        }
+                    }
                 }
-                WatcherEnum::Recommended(watcher)
             }
-        };
+        }
+    }
+
+    fn watch_by_recommended_watcher(&self, pathnames: Vec<String>, mode: RecursiveMode) -> Result<bool, Error> {
+        let (tx, rx) = unbounded();
+        let mut watcher = RecommendedWatcher::new(tx, Config::default())
+            .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+        for pathname in &pathnames {
+            let path = Path::new(pathname);
+            watcher
+                .watch(path, mode)
+                .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+        }
 
         loop {
             select! {
