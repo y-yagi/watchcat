@@ -7,6 +7,7 @@ use magnus::{
     Error, Module, Object, Value,
 };
 use notify::{Config, PollWatcher, RecommendedWatcher, RecursiveMode, Watcher};
+use notify_debouncer_mini::{new_debouncer, Debouncer};
 use std::{path::Path, time::Duration};
 
 mod event;
@@ -23,7 +24,7 @@ enum WatcherEnum {
     #[allow(dead_code)]
     Poll(PollWatcher),
     #[allow(dead_code)]
-    Recommended(RecommendedWatcher),
+    Recommended(Debouncer<RecommendedWatcher>),
 }
 
 impl WatchcatWatcher {
@@ -68,15 +69,15 @@ impl WatchcatWatcher {
                 WatcherEnum::Poll(watcher)
             }
             false => {
-                let mut watcher = RecommendedWatcher::new(tx, Config::default())
-                    .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                let mut debouncer = new_debouncer(Duration::from_secs(0), tx).unwrap();
                 for pathname in &pathnames {
                     let path = Path::new(pathname);
-                    watcher
+                    debouncer
+                        .watcher()
                         .watch(path, mode)
                         .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
                 }
-                WatcherEnum::Recommended(watcher)
+                WatcherEnum::Recommended(debouncer)
             }
         };
 
