@@ -134,4 +134,29 @@ class WatchcatTest < Minitest::Test
     sleep 0.2
     assert_equal 1, events.count
   end
+
+  def test_watch_with_ignore_remove
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, wait_until_startup: true, ignore_remove: true) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+    sleep 0.2
+    sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))[0]
+    sleep 0.2
+    FileUtils.touch(File.join(sub_dir, "d.txt"))
+    sleep 0.2
+    FileUtils.remove_file(File.join(sub_dir, "d.txt"))
+    sleep 0.2
+    FileUtils.remove_dir(sub_dir)
+    sleep 0.2
+
+    if RUBY_PLATFORM.match?("linux")
+      assert_equal 7, events.count
+    else
+      assert_equal 6, events.count
+    end
+  end
 end

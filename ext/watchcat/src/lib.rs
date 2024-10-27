@@ -44,7 +44,7 @@ impl WatchcatWatcher {
             return Err(Error::new(magnus::exception::arg_error(), "no block given"));
         }
 
-        let (pathnames, recursive, force_polling, poll_interval) = Self::parse_args(args)?;
+        let (pathnames, recursive, force_polling, poll_interval, ignore_remove) = Self::parse_args(args)?;
         let (tx, rx) = unbounded();
         let mode = if recursive {
             RecursiveMode::Recursive
@@ -96,7 +96,12 @@ impl WatchcatWatcher {
                                         .map(|p| p.to_string_lossy().into_owned())
                                         .collect::<Vec<_>>();
 
+                                    if ignore_remove && matches!(event.kind, notify::event::EventKind::Remove(_)) {
+                                        continue;
+                                    }
+
                                     yield_value::<(Vec<String>, Vec<String>, String), Value>(
+
                                         (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
                                     )?;
                                 }
@@ -119,7 +124,7 @@ impl WatchcatWatcher {
     }
 
     #[allow(clippy::let_unit_value)]
-    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64), Error> {
+    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64, bool), Error> {
         type KwArgBool = Option<Option<bool>>;
         type KwArgU64 = Option<Option<u64>>;
 
@@ -133,9 +138,9 @@ impl WatchcatWatcher {
         let kwargs = get_kwargs(
             args.keywords,
             &[],
-            &["recursive", "force_polling", "poll_interval"],
+            &["recursive", "force_polling", "poll_interval", "ignore_remove"],
         )?;
-        let (recursive, force_polling, poll_interval): (KwArgBool, KwArgBool, KwArgU64) =
+        let (recursive, force_polling, poll_interval, ignore_remove): (KwArgBool, KwArgBool, KwArgU64, KwArgBool) =
             kwargs.optional;
         let _: () = kwargs.required;
         let _: () = kwargs.splat;
@@ -145,6 +150,7 @@ impl WatchcatWatcher {
             recursive.flatten().unwrap_or(false),
             force_polling.flatten().unwrap_or(false),
             poll_interval.flatten().unwrap_or(200),
+            ignore_remove.flatten().unwrap_or(false),
         ))
     }
 }
