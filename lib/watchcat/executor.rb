@@ -5,7 +5,7 @@ require_relative "client"
 
 module Watchcat
   class Executor
-    def initialize(paths, recursive:, force_polling:, poll_interval:, wait_until_startup:, block:)
+    def initialize(paths, recursive:, force_polling:, poll_interval:, wait_until_startup:, ignore_remove:, block:)
       @service = nil
       @child_pid = nil
       @paths = paths
@@ -13,6 +13,7 @@ module Watchcat
       @force_polling = force_polling
       @poll_interval = poll_interval
       @wait_until_startup = wait_until_startup
+      @ignore_remove = ignore_remove
       @block = block
     end
 
@@ -42,7 +43,8 @@ module Watchcat
         paths: @paths,
         recursive: @recursive,
         force_polling: @force_polling,
-        poll_interval: @poll_interval
+        poll_interval: @poll_interval,
+        ignore_remove: @ignore_remove
       )
     end
   end
