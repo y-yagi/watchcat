@@ -9,4 +9,8 @@ if ENV["CI"]
   Minitest::Retry.use!
 end
 
+def inspect_events(events)
+  events.map {|e| [e.paths, e.raw_kind] }
+end
+
 require "minitest/autorun"

@@ -25,9 +25,9 @@ class Watchcat::KindTest < Minitest::Test
     sleep 0.2
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 1, events.count
+      assert_equal 1, events.count, inspect_events(events)
     else
-      assert_equal 2, events.count
+      assert_equal 2, events.count, inspect_events(events)
     end
 
     event = events.last
@@ -48,9 +48,9 @@ class Watchcat::KindTest < Minitest::Test
     sleep 0.2
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 1, events.count
+      assert_equal 1, events.count, inspect_events(events)
     else
-      assert_equal 2, events.count
+      assert_equal 2, events.count, inspect_events(events)
     end
     event = events.last
     assert event.kind.remove?
@@ -66,9 +66,9 @@ class Watchcat::KindTest < Minitest::Test
     sleep 0.2
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 2, events.count
+      assert_equal 2, events.count, inspect_events(events)
     else
-      assert_equal 1, events.count
+      assert_equal 1, events.count, inspect_events(events)
     end
     event = events.first
     assert event.kind.create?
@@ -84,7 +84,7 @@ class Watchcat::KindTest < Minitest::Test
     Dir.mkdir(dir)
     sleep 0.2
 
-    assert_equal 1, events.count
+    assert_equal 1, events.count, inspect_events(events)
     event = events.first
     assert event.kind.create?
     refute event.kind.create.file?
@@ -102,7 +102,7 @@ class Watchcat::KindTest < Minitest::Test
     File.rename(file, new_file)
     sleep 0.2
 
-    assert_equal 3, events.count
+    assert_equal 3, events.count, inspect_events(events)
     if RUBY_PLATFORM.match?("linux")
       assert events[0].kind.modify?
       assert events[0].kind.modify.from?
@@ -136,7 +136,7 @@ class Watchcat::KindTest < Minitest::Test
     system("echo 'a' >> #{file}", exception: true)
     sleep 0.2
 
-    assert_equal 2, events.count
+    assert_equal 2, events.count, inspect_events(events)
     if RUBY_PLATFORM.match?("linux")
       assert events[0].kind.modify?
       assert events[0].kind.modify.data_change?
@@ -163,9 +163,9 @@ class Watchcat::KindTest < Minitest::Test
     sleep 0.2
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 1, events.count
+      assert_equal 1, events.count, inspect_events(events)
     else
-      assert_equal 2, events.count
+      assert_equal 2, events.count, inspect_events(events)
     end
 
     event = events.last

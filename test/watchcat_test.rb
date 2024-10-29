@@ -29,9 +29,9 @@ class WatchcatTest < Minitest::Test
     sleep 0.3
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 5, events.count
+      assert_equal 5, events.count, inspect_events(events)
     else
-      refute_equal 0, events.count
+      refute_equal 0, events.count, inspect_events(events)
     end
 
     events.each do |event|
@@ -54,9 +54,9 @@ class WatchcatTest < Minitest::Test
     sleep 0.2
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 7, events.count
+      assert_equal 7, events.count, inspect_events(events)
     else
-      assert_equal 4, events.count
+      assert_equal 4, events.count, inspect_events(events)
     end
   end
 
@@ -73,7 +73,7 @@ class WatchcatTest < Minitest::Test
     FileUtils.touch(File.join(@tmpdir, "b.txt"))
 
     sleep 0.2
-    assert_equal 1, events.count
+    assert_equal 1, events.count, inspect_events(events)
   end
 
   def test_watch_directory_with_force_polling
@@ -132,7 +132,7 @@ class WatchcatTest < Minitest::Test
     FileUtils.touch(File.join(@tmpdir, "b.txt"))
 
     sleep 0.2
-    assert_equal 1, events.count
+    assert_equal 1, events.count, inspect_events(events)
   end
 
   def test_watch_with_ignore_remove
@@ -154,9 +154,9 @@ class WatchcatTest < Minitest::Test
     sleep 0.2
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 7, events.count
+      assert_equal 7, events.count, inspect_events(events)
     else
-      assert_equal 6, events.count
+      assert_equal 6, events.count, inspect_events(events)
     end
   end
 end
