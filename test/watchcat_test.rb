@@ -60,6 +60,21 @@ class WatchcatTest < Minitest::Test
     end
   end
 
+  def test_watch_directory_with_recursive_and_debonuce
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, wait_until_startup: true) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+    sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))
+    FileUtils.touch(File.join(sub_dir, "d.txt"))
+    sleep 1
+
+    assert_equal 4, events.count, inspect_events(events)
+  end
+
+
   def test_watch_file
     skip unless RUBY_PLATFORM.match?("linux")
 
@@ -158,5 +173,21 @@ class WatchcatTest < Minitest::Test
     else
       assert_equal 6, events.count, inspect_events(events)
     end
+  end
+
+  def test_watch_with_ignore_remove_and_debounce
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, wait_until_startup: true, ignore_remove: true) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+    sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))[0]
+    FileUtils.touch(File.join(sub_dir, "d.txt"))
+    FileUtils.remove_file(File.join(sub_dir, "d.txt"))
+    FileUtils.remove_dir(sub_dir)
+    sleep 1.0
+
+    assert_equal 2, events.count, inspect_events(events)
   end
 end

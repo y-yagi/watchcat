@@ -2,10 +2,10 @@ require "forwardable"
 
 module Watchcat
   class EventKind
-    attr_accessor :access, :create, :modify, :remove
+    attr_accessor :access, :create, :modify, :remove, :any
 
     def initialize
-      @access, @create, @modify, @remove = nil, nil, nil, nil
+      @access, @create, @modify, @remove, @any = nil, nil, nil, nil,nil
     end
 
     def access?
@@ -22,6 +22,10 @@ module Watchcat
 
     def remove?
       !@remove.nil?
+    end
+
+    def any?
+      !@any.nil?
     end
   end
 
@@ -96,6 +100,19 @@ module Watchcat
       @kind == "folder"
     end
   end
+
+  class AnyKind
+    attr_accessor :kind
+
+    def file?
+      @kind == "file"
+    end
+
+    def folder?
+      @kind == "folder"
+    end
+  end
+
 
   class AccessMode
     attr_accessor :mode
