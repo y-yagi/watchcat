@@ -29,7 +29,7 @@ class WatchcatTest < Minitest::Test
     sleep 0.3
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 5, events.count, inspect_events(events)
+      assert_equal 7, events.count, inspect_events(events)
     else
       refute_equal 0, events.count, inspect_events(events)
     end
@@ -54,7 +54,7 @@ class WatchcatTest < Minitest::Test
     sleep 0.2
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 7, events.count, inspect_events(events)
+      assert_equal 11, events.count, inspect_events(events)
     else
       assert_equal 4, events.count, inspect_events(events)
     end
@@ -154,7 +154,7 @@ class WatchcatTest < Minitest::Test
     sleep 0.2
 
     if RUBY_PLATFORM.match?("linux")
-      assert_equal 7, events.count, inspect_events(events)
+      assert_equal 13, events.count, inspect_events(events)
     else
       assert_equal 6, events.count, inspect_events(events)
     end
