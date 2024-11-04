@@ -44,7 +44,7 @@ impl WatchcatWatcher {
             return Err(Error::new(magnus::exception::arg_error(), "no block given"));
         }
 
-        let (pathnames, recursive, force_polling, poll_interval, ignore_remove) = Self::parse_args(args)?;
+        let (pathnames, recursive, force_polling, poll_interval, ignore_remove, debounce) = Self::parse_args(args)?;
         let (tx, rx) = unbounded();
         let mode = if recursive {
             RecursiveMode::Recursive
@@ -124,9 +124,10 @@ impl WatchcatWatcher {
     }
 
     #[allow(clippy::let_unit_value)]
-    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64, bool), Error> {
+    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64, bool, i64), Error> {
         type KwArgBool = Option<Option<bool>>;
         type KwArgU64 = Option<Option<u64>>;
+        type KwArgi64 = Option<Option<i64>>;
 
         let args = scan_args(args)?;
         let (paths,): (Vec<String>,) = args.required;
@@ -140,7 +141,7 @@ impl WatchcatWatcher {
             &[],
             &["recursive", "force_polling", "poll_interval", "ignore_remove"],
         )?;
-        let (recursive, force_polling, poll_interval, ignore_remove): (KwArgBool, KwArgBool, KwArgU64, KwArgBool) =
+        let (recursive, force_polling, poll_interval, ignore_remove, debounce): (KwArgBool, KwArgBool, KwArgU64, KwArgBool, KwArgi64) =
             kwargs.optional;
         let _: () = kwargs.required;
         let _: () = kwargs.splat;
@@ -151,6 +152,7 @@ impl WatchcatWatcher {
             force_polling.flatten().unwrap_or(false),
             poll_interval.flatten().unwrap_or(200),
             ignore_remove.flatten().unwrap_or(false),
+            debounce.flatten().unwrap_or(-1),
         ))
     }
 }
