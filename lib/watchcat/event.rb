@@ -19,8 +19,17 @@ module Watchcat
     def build_kind(kinds)
       @kind = Watchcat::EventKind.new
       @event = kinds.shift
-      @kind.public_send("#{event}=", Object.const_get("Watchcat::#{event.capitalize}Kind").new)
-      send("build_#{event}_kind", kinds)
+      if event
+        @kind.public_send("#{event}=", Object.const_get("Watchcat::#{event.capitalize}Kind").new)
+        send("build_#{event}_kind", kinds)
+      else
+        @kind.any = Watchcat::AnyKind.new
+        if File.directory?(@paths.first)
+          @kind.any.kind = "folder"
+        else
+          @kind.any.kind = "file"
+        end
+      end
     end
 
     def build_access_kind(kinds)

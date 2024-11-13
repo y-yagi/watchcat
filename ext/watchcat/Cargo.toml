@@ -11,4 +11,5 @@ crate-type = ["cdylib"]
 crossbeam-channel = "0.5.13"
 magnus = "0.7"
 notify = { version = "7.0.0", features = ["crossbeam-channel"] }
+notify-debouncer-mini = { version = "0.5.0", features = ["crossbeam-channel"] }
 rb-sys = "0.9.102"

@@ -16,6 +16,7 @@ module Watchcat
       poll_interval: nil,
       wait_until_startup: false,
       ignore_remove: false,
+      debounce: -1,
       &block
     )
       w =
@@ -26,6 +27,7 @@ module Watchcat
           poll_interval: poll_interval,
           wait_until_startup: wait_until_startup,
           ignore_remove: ignore_remove,
+          debounce: debounce,
           block: block
         )
       w.start
