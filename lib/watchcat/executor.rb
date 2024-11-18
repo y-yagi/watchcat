@@ -29,6 +29,13 @@ module Watchcat
         Process.setproctitle("watchcat: watcher")
         client.run
       end
+
+      main = Process.pid
+      at_exit do
+        @exit_status = $!.status if $!.is_a?(SystemExit)
+        stop if Process.pid == main
+        exit @exit_status if @exit_status
+      end
     end
 
     def stop
