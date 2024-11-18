@@ -39,7 +39,11 @@ module Watchcat
     end
 
     def stop
-      Process.kill(:KILL, @child_pid)
+      begin
+        Process.kill(:KILL, @child_pid)
+      rescue Errno::ESRCH
+        # NOTE: We can ignore this error because there process is already dead.
+      end
       @service.stop_service
     end
 
