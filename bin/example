@@ -24,7 +24,4 @@ w = Watchcat.watch("/tmp/target") do |e|
   end
 end
 
-# Don't forget to call `stop`.
-at_exit { w.stop }
-
 sleep

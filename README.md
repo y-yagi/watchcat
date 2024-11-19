@@ -31,9 +31,6 @@ w = Watchcat.watch("/tmp/test") do |e|
   pp e.paths, e.kind
 end
 
-# Don't forget to call `stop`.
-at_exit { w.stop }
-
 sleep
 ```
 
@@ -80,9 +77,6 @@ w = Watchcat.watch("/tmp/target") do |e|
     end
   end
 end
-
-# Don't forget to call `stop`.
-at_exit { w.stop }
 
 sleep
 ```

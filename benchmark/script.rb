@@ -43,7 +43,6 @@ FileUtils.touch("#{dir}/#{file_count-1}.txt")
 puts "-------------------------------------\n\n"
 
 at_exit do
-  w.stop
   FileUtils.rm_rf(dir, verbose: true)
 end
 sleep

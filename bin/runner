@@ -7,7 +7,5 @@ require "watchcat"
 raise "please specify a path to watch" if ARGV.length.zero?
 w = Watchcat.watch(ARGV, recursive: false) { |e| pp e.kind, e.raw_kind, e.paths }
 
-at_exit { w.stop }
-
 puts "watching start"
 sleep
