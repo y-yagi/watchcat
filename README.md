@@ -91,7 +91,7 @@ sleep
 | -------------------------- | -----------------------------------------| ----------------- |
 | **recursive**              | Watch a directory recursively or not.    | `true`            |
 | **force_polling**          | Force to use a polling to watch.         | `false`           |
-
+| **debounce**               | Debounce events for the same file.       | `-1`              |
 
 
 ## Contributing
