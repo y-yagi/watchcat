@@ -10,6 +10,7 @@ class WatchcatTest < Minitest::Test
   end
 
   def teardown
+    @watchcat.stop if @watchcat
     FileUtils.remove_entry_secure(@tmpdir)
   end
 
