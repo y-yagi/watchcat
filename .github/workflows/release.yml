@@ -32,5 +32,16 @@ jobs:
         platform: ${{ matrix.ruby-platform }}
         ruby-versions: "3.0,3.1,3.2,3.3"
 
+    - name: Set remote URL
+      run: |
+        # Attribute commits to the last committer on HEAD
+        git config --global user.email "$(git log -1 --pretty=format:'%ae')"
+        git config --global user.name "$(git log -1 --pretty=format:'%an')"
+        git remote set-url origin "https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY"
+      shell: bash
+
+    - name: Configure trusted publishing credentials
+      uses: rubygems/configure-rubygems-credentials@v1.0.0
+
     - name: Release gem
       run: gem push ${{ steps.cross-gem.outputs.gem-path }}
