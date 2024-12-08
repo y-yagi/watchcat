@@ -1,8 +1,8 @@
 module Watchcat
   class Client
-    def initialize(uri, paths:, recursive:, force_polling:, poll_interval:, ignore_remove:, debounce:)
+    def initialize(uri, watcher:, paths:, recursive:, force_polling:, poll_interval:, ignore_remove:, debounce:)
       DRb.start_service
-      @watcher = Watchcat::Watcher.new
+      @watcher = watcher
       @server = DRbObject.new_with_uri(uri)
       @paths = paths
       @recursive = recursive

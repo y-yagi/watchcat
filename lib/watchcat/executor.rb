@@ -16,6 +16,7 @@ module Watchcat
       @ignore_remove = ignore_remove
       @debounce = debounce
       @block = block
+      @watcher = Watchcat::Watcher.new
     end
 
     def start
@@ -40,6 +41,7 @@ module Watchcat
 
     def stop
       begin
+        @watcher.close
         Process.kill(:KILL, @child_pid)
       rescue Errno::ESRCH
         # NOTE: We can ignore this error because there process is already dead.
@@ -52,6 +54,7 @@ module Watchcat
     def build_client
       Client.new(
         @service.uri,
+        watcher: @watcher,
         paths: @paths,
         recursive: @recursive,
         force_polling: @force_polling,
