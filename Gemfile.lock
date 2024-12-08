@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    watchcat (0.2.0)
+    watchcat (0.2.1)
       drb
       rb_sys
 
