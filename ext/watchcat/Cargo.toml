@@ -8,7 +8,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-crossbeam-channel = "0.5.14"
+crossbeam-channel = "0.5.15"
 magnus = "0.7"
 notify = { version = "8.0.0", features = ["crossbeam-channel"] }
 notify-debouncer-mini = { version = "0.6.0", features = ["crossbeam-channel"] }
