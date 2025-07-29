@@ -13,7 +13,7 @@ GEM
     debug (1.11.0)
       irb (~> 1.10)
       reline (>= 0.3.8)
-    drb (2.2.1)
+    drb (2.2.3)
     erb (4.0.4)
       cgi (>= 0.3.3)
     ffi (1.17.1-arm64-darwin)
