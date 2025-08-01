@@ -1,4 +1,4 @@
-require "watchcat/event"
+require_relative "event"
 
 module Watchcat
   class Server
