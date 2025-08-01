@@ -97,7 +97,7 @@ class WatchcatTest < Minitest::Test
 
     events = []
     @watchcat = Watchcat.watch(@tmpdir, force_polling: true) { |e| events << e }
-    pid = @watchcat.instance_variable_get(:@child_pid)
+    pid = Process.pid
     sleep 0.2
     inotify_count = `cat /proc/#{pid}/fdinfo/* | grep inotify | wc -l`.to_i
 
@@ -116,7 +116,7 @@ class WatchcatTest < Minitest::Test
       Watchcat.watch(@tmpdir, force_polling: true, poll_interval: 1000) do |e|
         events << e
       end
-    pid = @watchcat.instance_variable_get(:@child_pid)
+    pid = Process.pid
     sleep 0.2
     inotify_count = `cat /proc/#{pid}/fdinfo/* | grep inotify | wc -l`.to_i
 
