@@ -22,18 +22,14 @@ module Watchcat
         Thread.current.name = "watchcat-watcher"
         start_watching
       end
-      
+
       # If wait_until_startup is true, give the thread a moment to start
       if @wait_until_startup
         sleep 0.1
       end
 
-      # Set up cleanup on exit
-      main = Process.pid
       at_exit do
-        @exit_status = $!.status if $!.is_a?(SystemExit)
-        stop if Process.pid == main
-        exit @exit_status if @exit_status
+        stop
       end
     end
 
@@ -57,7 +53,7 @@ module Watchcat
         debounce: @debounce
       ) do |kind, paths, raw_kind|
         break if @stop_requested
-        
+
         # Create an event object and call the block
         event = Watchcat::Event.new(kind, paths, raw_kind)
         @block.call(event)
