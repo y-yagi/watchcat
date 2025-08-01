@@ -7,6 +7,7 @@ require "fileutils"
 class Watchcat::KindTest < Minitest::Test
   def setup
     @tmpdir = Dir.mktmpdir("watchcat")
+    sleep 0.2
   end
 
   def teardown
