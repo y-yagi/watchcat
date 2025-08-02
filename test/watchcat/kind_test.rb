@@ -24,10 +24,10 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.remove(file)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 1, events.count, inspect_events(events)
-    else
+    if RUBY_PLATFORM.match?("darwin")
       assert_equal 2, events.count, inspect_events(events)
+    else
+      assert_equal 1, events.count, inspect_events(events)
     end
 
     event = events.last
@@ -47,11 +47,7 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.remove_dir(dir)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 2, events.count, inspect_events(events)
-    else
-      assert_equal 2, events.count, inspect_events(events)
-    end
+    assert_equal 2, events.count, inspect_events(events)
     event = events.last
     assert event.kind.remove?
     refute event.kind.remove.file?
@@ -132,17 +128,7 @@ class Watchcat::KindTest < Minitest::Test
     sleep 0.2
 
     assert_equal 3, events.count, inspect_events(events)
-    if RUBY_PLATFORM.match?("linux")
-      assert events[0].kind.modify?
-      assert events[0].kind.modify.from?
-      assert_equal [file], events[0].paths
-      assert events[1].kind.modify?
-      assert events[1].kind.modify.to?
-      assert_equal [new_file], events[1].paths
-      assert events[2].kind.modify?
-      assert events[2].kind.modify.both?
-      assert_equal [file, new_file], events[2].paths
-    else
+    if RUBY_PLATFORM.match?("darwin")
       assert events[0].kind.create?
       assert events[0].kind.create.file?
       assert_equal File.basename(file), File.basename(events[0].paths[0])
@@ -152,6 +138,16 @@ class Watchcat::KindTest < Minitest::Test
       assert events[2].kind.modify?
       assert events[2].kind.modify.rename?
       assert_equal File.basename(new_file), File.basename(events[2].paths[0])
+    else
+      assert events[0].kind.modify?
+      assert events[0].kind.modify.from?
+      assert_equal [file], events[0].paths
+      assert events[1].kind.modify?
+      assert events[1].kind.modify.to?
+      assert_equal [new_file], events[1].paths
+      assert events[2].kind.modify?
+      assert events[2].kind.modify.both?
+      assert_equal [file, new_file], events[2].paths
     end
   end
 
@@ -165,7 +161,14 @@ class Watchcat::KindTest < Minitest::Test
     system("echo 'a' >> #{file}", exception: true)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
+    if RUBY_PLATFORM.match?("darwin")
+      assert_equal 2, events.count, inspect_events(events)
+      assert events[0].kind.create?
+      assert events[0].kind.create.file?
+      assert events[1].kind.modify?
+      assert events[1].kind.modify.data_change?
+      assert events[1].kind.modify.data_change.content?
+    else
       assert_equal 3, events.count, inspect_events(events)
       assert events[0].kind.access?
       assert events[0].kind.access.open?
@@ -175,13 +178,6 @@ class Watchcat::KindTest < Minitest::Test
       assert events[2].kind.access?
       assert events[2].kind.access.close?
       assert events[2].kind.access.write_mode?
-    else
-      assert_equal 2, events.count, inspect_events(events)
-      assert events[0].kind.create?
-      assert events[0].kind.create.file?
-      assert events[1].kind.modify?
-      assert events[1].kind.modify.data_change?
-      assert events[1].kind.modify.data_change.content?
     end
   end
 
@@ -195,10 +191,10 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.chmod(0644, file)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 1, events.count, inspect_events(events)
-    else
+    if RUBY_PLATFORM.match?("darwin")
       assert_equal 2, events.count, inspect_events(events)
+    else
+      assert_equal 1, events.count, inspect_events(events)
     end
 
     event = events.last
