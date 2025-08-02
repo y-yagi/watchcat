@@ -4,7 +4,7 @@
 require "bundler/setup"
 require "watchcat"
 
-w = Watchcat.watch("/tmp/target") do |e|
+Watchcat.watch("/tmp/target") do |e|
   if e.kind.create?
     if e.kind.create.file?
       puts "'#{e.paths[0]}'(File) is added."

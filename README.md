@@ -27,7 +27,7 @@ Please specify a filename or directory and callback block to `Watchcat.watch`. T
 ```ruby
 require "watchcat"
 
-w = Watchcat.watch("/tmp/test") do |e|
+Watchcat.watch("/tmp/test") do |e|
   pp e.paths, e.kind
 end
 
@@ -58,7 +58,7 @@ You can know what event is happened with `Watchcat::EventKind`. For example, wha
 ```ruby
 require "watchcat"
 
-w = Watchcat.watch("/tmp/target") do |e|
+Watchcat.watch("/tmp/target") do |e|
   if e.kind.create?
     if e.kind.create.file?
       puts "'#{e.paths[0]}'(File) is added."
