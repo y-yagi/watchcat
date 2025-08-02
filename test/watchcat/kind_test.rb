@@ -24,16 +24,18 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.remove(file)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 1, events.count, inspect_events(events)
-    else
+    if mac_os?
       assert_equal 2, events.count, inspect_events(events)
+    else
+      assert_equal 1, events.count, inspect_events(events)
     end
 
     event = events.last
     assert event.kind.remove?
-    assert event.kind.remove.file?
-    refute event.kind.remove.folder?
+    unless windows?
+      assert event.kind.remove.file?
+      refute event.kind.remove.folder?
+    end
   end
 
   def test_remove_directory
@@ -47,15 +49,17 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.remove_dir(dir)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 2, events.count, inspect_events(events)
+    if windows?
+      assert_equal 1, events.count, inspect_events(events)
     else
       assert_equal 2, events.count, inspect_events(events)
     end
     event = events.last
     assert event.kind.remove?
-    refute event.kind.remove.file?
-    assert event.kind.remove.folder?
+    unless windows?
+      refute event.kind.remove.file?
+      assert event.kind.remove.folder?
+    end
   end
 
   def test_create_file
@@ -65,15 +69,18 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 3, events.count, inspect_events(events)
-    else
+    if mac_os? || windows?
       assert_equal 1, events.count, inspect_events(events)
+    else
+      assert_equal 3, events.count, inspect_events(events)
     end
     event = events.first
     assert event.kind.create?
-    assert event.kind.create.file?
-    refute event.kind.create.folder?
+
+    unless windows?
+      assert event.kind.create.file?
+      refute event.kind.create.folder?
+    end
   end
 
   def test_create_file_with_debonuce
@@ -101,8 +108,10 @@ class Watchcat::KindTest < Minitest::Test
     assert_equal 1, events.count, inspect_events(events)
     event = events.first
     assert event.kind.create?
-    refute event.kind.create.file?
-    assert event.kind.create.folder?
+    unless windows?
+      refute event.kind.create.file?
+      assert event.kind.create.folder?
+    end
   end
 
   def test_create_directory_with_debounce
@@ -131,18 +140,8 @@ class Watchcat::KindTest < Minitest::Test
     File.rename(file, new_file)
     sleep 0.2
 
-    assert_equal 3, events.count, inspect_events(events)
-    if RUBY_PLATFORM.match?("linux")
-      assert events[0].kind.modify?
-      assert events[0].kind.modify.from?
-      assert_equal [file], events[0].paths
-      assert events[1].kind.modify?
-      assert events[1].kind.modify.to?
-      assert_equal [new_file], events[1].paths
-      assert events[2].kind.modify?
-      assert events[2].kind.modify.both?
-      assert_equal [file, new_file], events[2].paths
-    else
+    if mac_os?
+      assert_equal 3, events.count, inspect_events(events)
       assert events[0].kind.create?
       assert events[0].kind.create.file?
       assert_equal File.basename(file), File.basename(events[0].paths[0])
@@ -152,6 +151,25 @@ class Watchcat::KindTest < Minitest::Test
       assert events[2].kind.modify?
       assert events[2].kind.modify.rename?
       assert_equal File.basename(new_file), File.basename(events[2].paths[0])
+    elsif windows?
+      assert_equal 2, events.count, inspect_events(events)
+      assert events[0].kind.modify?
+      assert events[0].kind.modify.from?
+      assert_equal file, events[0].paths.first.to_s.gsub("\\", "/")
+      assert events[1].kind.modify?
+      assert events[1].kind.modify.to?
+      assert_equal new_file, events[1].paths.first.to_s.gsub("\\", "/")
+    else
+      assert_equal 3, events.count, inspect_events(events)
+      assert events[0].kind.modify?
+      assert events[0].kind.modify.from?
+      assert_equal [file], events[0].paths
+      assert events[1].kind.modify?
+      assert events[1].kind.modify.to?
+      assert_equal [new_file], events[1].paths
+      assert events[2].kind.modify?
+      assert events[2].kind.modify.both?
+      assert_equal [file, new_file], events[2].paths
     end
   end
 
@@ -165,7 +183,17 @@ class Watchcat::KindTest < Minitest::Test
     system("echo 'a' >> #{file}", exception: true)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
+    if mac_os?
+      assert_equal 2, events.count, inspect_events(events)
+      assert events[0].kind.create?
+      assert events[0].kind.create.file?
+      assert events[1].kind.modify?
+      assert events[1].kind.modify.data_change?
+      assert events[1].kind.modify.data_change.content?
+    elsif windows?
+      assert_equal 1, events.count, inspect_events(events)
+      assert events[0].kind.modify?
+    else
       assert_equal 3, events.count, inspect_events(events)
       assert events[0].kind.access?
       assert events[0].kind.access.open?
@@ -175,17 +203,12 @@ class Watchcat::KindTest < Minitest::Test
       assert events[2].kind.access?
       assert events[2].kind.access.close?
       assert events[2].kind.access.write_mode?
-    else
-      assert_equal 2, events.count, inspect_events(events)
-      assert events[0].kind.create?
-      assert events[0].kind.create.file?
-      assert events[1].kind.modify?
-      assert events[1].kind.modify.data_change?
-      assert events[1].kind.modify.data_change.content?
     end
   end
 
   def test_chmod_file
+    skip if windows?
+
     file = FileUtils.touch(File.join(@tmpdir, "a.txt"))[0]
 
     events = []
@@ -195,10 +218,10 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.chmod(0644, file)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 1, events.count, inspect_events(events)
-    else
+    if mac_os?
       assert_equal 2, events.count, inspect_events(events)
+    else
+      assert_equal 1, events.count, inspect_events(events)
     end
 
     event = events.last

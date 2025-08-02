@@ -29,10 +29,12 @@ class WatchcatTest < Minitest::Test
     FileUtils.touch(File.join(sub_dir, "d.txt"))
     sleep 0.3
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 7, events.count, inspect_events(events)
-    else
+    if mac_os?
       refute_equal 0, events.count, inspect_events(events)
+    elsif windows?
+      assert_equal 3, events.count, inspect_events(events)
+    else
+      assert_equal 7, events.count, inspect_events(events)
     end
 
     events.each do |event|
@@ -54,10 +56,10 @@ class WatchcatTest < Minitest::Test
     FileUtils.touch(File.join(sub_dir, "d.txt"))
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 11, events.count, inspect_events(events)
-    else
+    if mac_os? || windows?
       assert_equal 4, events.count, inspect_events(events)
+    else
+      assert_equal 11, events.count, inspect_events(events)
     end
   end
 
@@ -72,7 +74,11 @@ class WatchcatTest < Minitest::Test
     FileUtils.touch(File.join(sub_dir, "d.txt"))
     sleep 1
 
-    assert_equal 4, events.count, inspect_events(events)
+    if windows?
+      assert_equal 5, events.count, inspect_events(events)
+    else
+      assert_equal 4, events.count, inspect_events(events)
+    end
   end
 
 
@@ -93,7 +99,7 @@ class WatchcatTest < Minitest::Test
   end
 
   def test_watch_directory_with_force_polling
-    skip unless RUBY_PLATFORM.match?("linux")
+    skip if mac_os? || windows?
 
     events = []
     @watchcat = Watchcat.watch(@tmpdir, force_polling: true) { |e| events << e }
@@ -169,10 +175,12 @@ class WatchcatTest < Minitest::Test
     FileUtils.remove_dir(sub_dir)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 13, events.count, inspect_events(events)
-    else
+    if mac_os?
       assert_equal 6, events.count, inspect_events(events)
+    elsif windows?
+      assert_equal 5, events.count, inspect_events(events)
+    else
+      assert_equal 13, events.count, inspect_events(events)
     end
   end
 
