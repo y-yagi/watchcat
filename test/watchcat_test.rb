@@ -29,10 +29,10 @@ class WatchcatTest < Minitest::Test
     FileUtils.touch(File.join(sub_dir, "d.txt"))
     sleep 0.3
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 7, events.count, inspect_events(events)
-    else
+    if RUBY_PLATFORM.match?("darwin")
       refute_equal 0, events.count, inspect_events(events)
+    else
+      assert_equal 7, events.count, inspect_events(events)
     end
 
     events.each do |event|
@@ -54,10 +54,10 @@ class WatchcatTest < Minitest::Test
     FileUtils.touch(File.join(sub_dir, "d.txt"))
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 11, events.count, inspect_events(events)
-    else
+    if RUBY_PLATFORM.match?("darwin")
       assert_equal 4, events.count, inspect_events(events)
+    else
+      assert_equal 11, events.count, inspect_events(events)
     end
   end
 
@@ -169,10 +169,10 @@ class WatchcatTest < Minitest::Test
     FileUtils.remove_dir(sub_dir)
     sleep 0.2
 
-    if RUBY_PLATFORM.match?("linux")
-      assert_equal 13, events.count, inspect_events(events)
-    else
+    if RUBY_PLATFORM.match?("darwin")
       assert_equal 6, events.count, inspect_events(events)
+    else
+      assert_equal 13, events.count, inspect_events(events)
     end
   end
 
