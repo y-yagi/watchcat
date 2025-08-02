@@ -155,10 +155,10 @@ class Watchcat::KindTest < Minitest::Test
       assert_equal 2, events.count, inspect_events(events)
       assert events[0].kind.modify?
       assert events[0].kind.modify.from?
-      assert_equal [file], events[0].paths
+      assert_equal file, events[0].paths.first.to_s.gsub("\\", "/")
       assert events[1].kind.modify?
       assert events[1].kind.modify.to?
-      assert_equal [new_file], events[1].paths
+      assert_equal new_file, events[1].paths.first.to_s.gsub("\\", "/")
     else
       assert_equal 3, events.count, inspect_events(events)
       assert events[0].kind.modify?
