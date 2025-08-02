@@ -13,4 +13,12 @@ def inspect_events(events)
   events.map {|e| [e.paths, e.raw_kind] }
 end
 
+def mac_os?
+  RUBY_PLATFORM.match?("darwin")
+end
+
+def windows?
+  RUBY_PLATFORM.match?("mswin|mingw|cygwin")
+end
+
 require "minitest/autorun"
