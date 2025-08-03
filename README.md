@@ -8,7 +8,7 @@ This gem uses [Notify](https://github.com/notify-rs/notify) to get notifications
 
 ## Platforms
 
-This gem supports Linux and macOS. Due to the using `fork`, this doesn't support Windows now.
+This gem supports Linux, macOS and Windows.
 
 ## Installation
 
