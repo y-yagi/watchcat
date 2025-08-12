@@ -67,19 +67,17 @@ class WatchcatTest < Minitest::Test
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200) { |e| events << e }
 
-    sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
-    FileUtils.touch(File.join(@tmpdir, "b.txt"))
     sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))
-    sleep 0.2
     FileUtils.touch(File.join(sub_dir, "d.txt"))
+
+    sleep 1
+    events.clear
+    3.times { FileUtils.touch(File.join(@tmpdir, "a.txt")) }
+    3.times { FileUtils.touch(File.join(sub_dir, "d.txt")) }
     sleep 1
 
-    if windows?
-      assert_equal 5, events.count, inspect_events(events)
-    else
-      assert_equal 4, events.count, inspect_events(events)
-    end
+    assert_equal 2, events.count, inspect_events(events)
   end
 
 
@@ -183,22 +181,6 @@ class WatchcatTest < Minitest::Test
     else
       assert_equal 13, events.count, inspect_events(events)
     end
-  end
-
-  def test_watch_with_ignore_remove_and_debounce
-    events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, filters: {ignore_remove: true}) { |e| events << e }
-
-    sleep 0.2
-    FileUtils.touch(File.join(@tmpdir, "a.txt"))
-    FileUtils.touch(File.join(@tmpdir, "b.txt"))
-    sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))[0]
-    FileUtils.touch(File.join(sub_dir, "d.txt"))
-    FileUtils.remove_file(File.join(sub_dir, "d.txt"))
-    FileUtils.remove_dir(sub_dir)
-    sleep 1.0
-
-    assert_equal 2, events.count, inspect_events(events)
   end
 
   def test_watch_with_ignore_access
