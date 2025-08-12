@@ -7,7 +7,7 @@ use magnus::{
     Error, Module, Object, Value,
 };
 use notify::{Config, PollWatcher, RecommendedWatcher, RecursiveMode, Watcher};
-use notify_debouncer_mini::new_debouncer;
+use notify_debouncer_full::new_debouncer;
 use std::{path::Path, time::Duration, sync::{Arc, atomic::{AtomicBool, Ordering}}};
 
 mod event;
@@ -172,11 +172,10 @@ impl WatchcatWatcher {
     ) -> Result<bool, Error> {
         call_without_gvl(move || {
             let (tx, watcher_rx) = unbounded();
-            let mut debouncer = new_debouncer(Duration::from_millis(debounce.try_into().unwrap()), tx).unwrap();
+            let mut debouncer = new_debouncer(Duration::from_millis(debounce.try_into().unwrap()), None, tx).unwrap();
             for pathname in &pathnames {
                 let path = Path::new(pathname);
                 debouncer
-                    .watcher()
                     .watch(path, mode)
                     .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
             }
@@ -195,15 +194,20 @@ impl WatchcatWatcher {
                             Ok(events) => {
                                 match events {
                                     Ok(events) => {
-                                        for event in events.iter() {
-                                            if ignore_remove && !Path::new(&event.path).exists() {
+                                        for debounced_event in events.iter() {
+                                            let event = &debounced_event.event;
+                                            let paths = event.paths.iter()
+                                                .map(|p| p.to_string_lossy().into_owned())
+                                                .collect::<Vec<_>>();
+
+                                            if ignore_remove && paths.iter().any(|p| !Path::new(p).exists()) {
                                                 continue;
                                             }
 
                                             // Yield to Ruby with GVL
                                             let result = call_with_gvl(|_| {
                                                 yield_value::<(Vec<String>, Vec<String>, String), Value>(
-                                                    (vec![], vec![event.path.to_string_lossy().into_owned()], format!("{:?}", event.kind))
+                                                    (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
                                                 )
                                             });
 
@@ -213,7 +217,7 @@ impl WatchcatWatcher {
                                         }
                                     }
                                     Err(e) => {
-                                        break Err(Error::new(magnus::exception::runtime_error(), e.to_string()));
+                                        break Err(Error::new(magnus::exception::runtime_error(), format!("{:?}", e)));
                                     }
                                 }
                             }

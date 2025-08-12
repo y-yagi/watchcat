@@ -68,16 +68,16 @@ class WatchcatTest < Minitest::Test
     @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, wait_until_startup: true) { |e| events << e }
 
     sleep 0.2
-    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    3.times { FileUtils.touch(File.join(@tmpdir, "a.txt")) }
     FileUtils.touch(File.join(@tmpdir, "b.txt"))
     sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))
-    FileUtils.touch(File.join(sub_dir, "d.txt"))
+    3.times { FileUtils.touch(File.join(sub_dir, "d.txt")) }
     sleep 1
 
     if windows?
       assert_equal 5, events.count, inspect_events(events)
     else
-      assert_equal 4, events.count, inspect_events(events)
+      assert_equal 8, events.count, inspect_events(events)
     end
   end
 
@@ -189,7 +189,7 @@ class WatchcatTest < Minitest::Test
     @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, wait_until_startup: true, ignore_remove: true) { |e| events << e }
 
     sleep 0.2
-    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    3.times { FileUtils.touch(File.join(@tmpdir, "a.txt")) }
     FileUtils.touch(File.join(@tmpdir, "b.txt"))
     sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))[0]
     FileUtils.touch(File.join(sub_dir, "d.txt"))
@@ -197,6 +197,6 @@ class WatchcatTest < Minitest::Test
     FileUtils.remove_dir(sub_dir)
     sleep 1.0
 
-    assert_equal 2, events.count, inspect_events(events)
+    assert_equal 6, events.count, inspect_events(events)
   end
 end
