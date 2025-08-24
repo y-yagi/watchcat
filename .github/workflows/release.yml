@@ -21,7 +21,7 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - uses: oxidize-rb/actions/setup-ruby-and-rust@4c939d516bd77ec5806f382c9bb574f4634098a7 # v1.4.2
       with:
