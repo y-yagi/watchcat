@@ -50,7 +50,7 @@ impl WatchcatWatcher {
             return Err(Error::new(magnus::exception::arg_error(), "no block given"));
         }
 
-    let (pathnames, recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, debounce) = Self::parse_args(args)?;
+    let (pathnames, recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, debounce) = Self::parse_args(args)?;
         let mode = if recursive {
             RecursiveMode::Recursive
         } else {
@@ -62,11 +62,11 @@ impl WatchcatWatcher {
 
         if debounce >= 0 {
             Self::watch_with_debounce_threaded(
-                pathnames, mode, ignore_remove, ignore_access, ignore_create, debounce, terminated, rx_clone
+                pathnames, mode, ignore_remove, ignore_access, ignore_create, ignore_modify, debounce, terminated, rx_clone
             )
         } else {
             Self::watch_without_debounce_threaded(
-                pathnames, mode, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, terminated, rx_clone
+                pathnames, mode, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, terminated, rx_clone
             )
         }
     }
@@ -79,6 +79,7 @@ impl WatchcatWatcher {
         ignore_remove: bool,
         ignore_access: bool,
         ignore_create: bool,
+        ignore_modify: bool,
         terminated: Arc<AtomicBool>,
         rx: crossbeam_channel::Receiver<bool>
     ) -> Result<bool, Error> {
@@ -141,6 +142,9 @@ impl WatchcatWatcher {
                                         if ignore_create && matches!(event.kind, notify::event::EventKind::Create(_)) {
                                             continue;
                                         }
+                                        if ignore_modify && matches!(event.kind, notify::event::EventKind::Modify(_)) {
+                                            continue;
+                                        }
 
                                         // Yield to Ruby with GVL
                                         let result = call_with_gvl(|_| {
@@ -174,6 +178,7 @@ impl WatchcatWatcher {
         ignore_remove: bool,
         ignore_access: bool,
         ignore_create: bool,
+        ignore_modify: bool,
         debounce: i64,
         terminated: Arc<AtomicBool>,
         rx: crossbeam_channel::Receiver<bool>
@@ -213,6 +218,9 @@ impl WatchcatWatcher {
                                             if ignore_create && format!("{:?}", event.kind).contains("Create") {
                                                 continue;
                                             }
+                                            if ignore_modify && format!("{:?}", event.kind).contains("Modify") {
+                                                continue;
+                                            }
 
                                             // Yield to Ruby with GVL
                                             let result = call_with_gvl(|_| {
@@ -242,7 +250,7 @@ impl WatchcatWatcher {
     }
 
     #[allow(clippy::let_unit_value, clippy::type_complexity)]
-    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64, bool, bool, bool, i64), Error> {
+    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64, bool, bool, bool, bool, i64), Error> {
         type KwArgBool = Option<Option<bool>>;
         type KwArgU64 = Option<Option<u64>>;
         type KwArgi64 = Option<Option<i64>>;
@@ -257,9 +265,9 @@ impl WatchcatWatcher {
         let kwargs = get_kwargs(
             args.keywords,
             &[],
-            &["recursive", "force_polling", "poll_interval", "ignore_remove", "ignore_access", "ignore_create", "debounce"],
+            &["recursive", "force_polling", "poll_interval", "ignore_remove", "ignore_access", "ignore_create", "ignore_modify", "debounce"],
         )?;
-        let (recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, debounce): (KwArgBool, KwArgBool, KwArgU64, KwArgBool, KwArgBool, KwArgBool, KwArgi64) =
+        let (recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, debounce): (KwArgBool, KwArgBool, KwArgU64, KwArgBool, KwArgBool, KwArgBool, KwArgBool, KwArgi64) =
             kwargs.optional;
         let _: () = kwargs.required;
         let _: () = kwargs.splat;
@@ -272,6 +280,7 @@ impl WatchcatWatcher {
             ignore_remove.flatten().unwrap_or(false),
             ignore_access.flatten().unwrap_or(false),
             ignore_create.flatten().unwrap_or(false),
+            ignore_modify.flatten().unwrap_or(false),
             debounce.flatten().unwrap_or(-1),
         ))
     }

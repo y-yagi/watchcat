@@ -243,4 +243,27 @@ class WatchcatTest < Minitest::Test
       refute event.kind.create?, "Create event was not filtered: #{event.kind.inspect}"
     end
   end
+
+  def test_watch_with_ignore_modify
+    events = []
+    @watchcat = Watchcat.watch(
+      @tmpdir,
+      recursive: true,
+      wait_until_startup: true,
+      filters: {ignore_modify: true}
+    ) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+    sleep 0.2
+    File.open(File.join(@tmpdir, "a.txt"), "w") { |f| f.puts "update" }
+    sleep 0.2
+
+    # No modify events should be present
+    events.each do |event|
+      refute event.kind.modify?, "Modify event was not filtered: #{event.kind.inspect}"
+    end
+  end
 end
