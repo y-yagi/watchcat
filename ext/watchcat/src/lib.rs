@@ -71,6 +71,7 @@ impl WatchcatWatcher {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn watch_without_debounce_threaded(
         pathnames: Vec<String>,
         mode: RecursiveMode,
@@ -172,6 +173,7 @@ impl WatchcatWatcher {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn watch_with_debounce_threaded(
         pathnames: Vec<String>,
         mode: RecursiveMode,
