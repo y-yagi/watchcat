@@ -159,7 +159,7 @@ class WatchcatTest < Minitest::Test
 
   def test_watch_with_ignore_remove
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: true, wait_until_startup: true, ignore_remove: true) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, wait_until_startup: true, filters: {ignore_remove: true}) { |e| events << e }
 
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
@@ -186,7 +186,7 @@ class WatchcatTest < Minitest::Test
 
   def test_watch_with_ignore_remove_and_debounce
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, wait_until_startup: true, ignore_remove: true) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, wait_until_startup: true, filters: {ignore_remove: true}) { |e| events << e }
 
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
@@ -198,5 +198,72 @@ class WatchcatTest < Minitest::Test
     sleep 1.0
 
     assert_equal 2, events.count, inspect_events(events)
+  end
+
+  def test_watch_with_ignore_access
+    events = []
+    @watchcat = Watchcat.watch(
+      @tmpdir,
+      recursive: true,
+      wait_until_startup: true,
+      filters: {ignore_access: true}
+    ) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.2
+    File.open(File.join(@tmpdir, "a.txt"), "r") { |f| f.read }
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+    sleep 0.2
+
+    # No access events should be present
+    events.each do |event|
+      refute event.kind.access?, "Access event was not filtered: #{event.kind.inspect}"
+    end
+  end
+
+  def test_watch_with_ignore_create
+    events = []
+    @watchcat = Watchcat.watch(
+      @tmpdir,
+      recursive: true,
+      wait_until_startup: true,
+      filters: {ignore_create: true}
+    ) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+    sleep 0.2
+
+    # No create events should be present
+    events.each do |event|
+      refute event.kind.create?, "Create event was not filtered: #{event.kind.inspect}"
+    end
+  end
+
+  def test_watch_with_ignore_modify
+    events = []
+    @watchcat = Watchcat.watch(
+      @tmpdir,
+      recursive: true,
+      wait_until_startup: true,
+      filters: {ignore_modify: true}
+    ) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+    sleep 0.2
+    File.open(File.join(@tmpdir, "a.txt"), "w") { |f| f.puts "update" }
+    sleep 0.2
+
+    # No modify events should be present
+    events.each do |event|
+      refute event.kind.modify?, "Modify event was not filtered: #{event.kind.inspect}"
+    end
   end
 end

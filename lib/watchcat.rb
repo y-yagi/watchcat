@@ -15,7 +15,7 @@ module Watchcat
       force_polling: false,
       poll_interval: nil,
       wait_until_startup: false,
-      ignore_remove: false,
+      filters: {},
       debounce: -1,
       &block
     )
@@ -26,7 +26,7 @@ module Watchcat
           force_polling: force_polling,
           poll_interval: poll_interval,
           wait_until_startup: wait_until_startup,
-          ignore_remove: ignore_remove,
+          filters: filters,
           debounce: debounce,
           block: block
         )

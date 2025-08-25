@@ -94,6 +94,26 @@ sleep
 | **debounce**               | Debounce events for the same file.       | `-1`              |
 
 
+### Filters Option
+
+You can use the `filters` option to ignore specific event types:
+
+| Key             | Description                       |
+|-----------------|-----------------------------------|
+| ignore_remove   | Ignore remove (delete) events     |
+| ignore_access   | Ignore access events              |
+| ignore_create   | Ignore create events              |
+| ignore_modify   | Ignore modify events              |
+
+Example usage:
+
+```ruby
+Watchcat.watch("/tmp/test", filters: { ignore_remove: true, ignore_access: true }) do |e|
+  pp e.paths, e.kind
+end
+```
+
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/y-yagi/watchcat.
