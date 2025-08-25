@@ -2,13 +2,14 @@ require_relative "event"
 
 module Watchcat
   class Executor
-    def initialize(paths, recursive:, force_polling:, poll_interval:, wait_until_startup:, ignore_remove:, debounce:, block:)
+    def initialize(paths, recursive:, force_polling:, poll_interval:, wait_until_startup:, filters:, debounce:, block:)
       @paths = paths
       @recursive = recursive
       @force_polling = force_polling
       @poll_interval = poll_interval
       @wait_until_startup = wait_until_startup
-      @ignore_remove = ignore_remove
+      @filters = filters || {}
+      @ignore_remove = @filters[:ignore_remove]
       @debounce = debounce
       @block = block
       @watcher = Watchcat::Watcher.new
