@@ -199,4 +199,27 @@ class WatchcatTest < Minitest::Test
 
     assert_equal 2, events.count, inspect_events(events)
   end
+
+  def test_watch_with_ignore_access
+    events = []
+    @watchcat = Watchcat.watch(
+      @tmpdir,
+      recursive: true,
+      wait_until_startup: true,
+      filters: {ignore_access: true}
+    ) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.2
+    File.open(File.join(@tmpdir, "a.txt"), "r") { |f| f.read }
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+    sleep 0.2
+
+    # No access events should be present
+    events.each do |event|
+      refute event.kind.access?, "Access event was not filtered: #{event.kind.inspect}"
+    end
+  end
 end
