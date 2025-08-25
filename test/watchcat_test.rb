@@ -222,4 +222,25 @@ class WatchcatTest < Minitest::Test
       refute event.kind.access?, "Access event was not filtered: #{event.kind.inspect}"
     end
   end
+
+  def test_watch_with_ignore_create
+    events = []
+    @watchcat = Watchcat.watch(
+      @tmpdir,
+      recursive: true,
+      wait_until_startup: true,
+      filters: {ignore_create: true}
+    ) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "b.txt"))
+    sleep 0.2
+
+    # No create events should be present
+    events.each do |event|
+      refute event.kind.create?, "Create event was not filtered: #{event.kind.inspect}"
+    end
+  end
 end

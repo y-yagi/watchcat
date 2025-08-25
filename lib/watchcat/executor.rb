@@ -51,6 +51,7 @@ module Watchcat
         poll_interval: @poll_interval,
         ignore_remove: @filters[:ignore_remove],
         ignore_access: @filters[:ignore_access],
+        ignore_create: @filters[:ignore_create],
         debounce: @debounce
       ) do |kind, paths, raw_kind|
         break if @stop_requested
