@@ -51,7 +51,6 @@ module Watchcat
       ) do |kind, paths, raw_kind|
         break if @stop_requested
 
-        # Create an event object and call the block
         event = Watchcat::Event.new(kind, paths, raw_kind)
         @block.call(event)
       end

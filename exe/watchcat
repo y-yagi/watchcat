@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require "watchcat"
+require "watchcat/cli"
+
+begin
+  Watchcat::CLI.start(ARGV)
+rescue Watchcat::CLI::Error => e
+  puts "Error: #{e.message}"
+  exit 1
+rescue Interrupt
+  puts "\nGoodbye!"
+  exit 0
+end

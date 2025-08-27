@@ -1,0 +1,14 @@
+# Watchcat Configuration File
+
+watches:
+  - path: "./lib"
+    recursive: true
+    debounce: 300
+    filters:
+      ignore_access: true
+    patterns:
+      - "*.rb"
+      - "*.yml"
+    actions:
+      - command: "echo 'Ruby/YAML file changed: {{file_name}}'"
+      - command: "rubocop {{file_path}}"

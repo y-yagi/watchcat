@@ -23,10 +23,12 @@ Gem::Specification.new do |spec|
       (f == __FILE__) || f.match(%r{\A(?:(?:bin|test|spec|features|benchmark)/|\.(?:git|travis|circleci)|appveyor)})
     end
   end
+  spec.bindir = "exe"
   spec.require_paths = ["lib"]
   spec.extensions = ["ext/watchcat/extconf.rb"]
 
   spec.add_dependency "rb_sys"
+  spec.add_dependency "psych"
   spec.add_development_dependency "debug"
   spec.add_development_dependency "minitest"
   spec.add_development_dependency "minitest-retry"

@@ -71,6 +71,7 @@ class WatchcatTest < Minitest::Test
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
     FileUtils.touch(File.join(@tmpdir, "b.txt"))
     sub_dir = FileUtils.mkdir(File.join(@tmpdir, "c"))
+    sleep 0.2
     FileUtils.touch(File.join(sub_dir, "d.txt"))
     sleep 1
 
