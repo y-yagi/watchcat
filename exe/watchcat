@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+
+require "watchcat"
+require "watchcat/cli"
+
+def show_help
+  puts <<~HELP
+    watchcat - A configurable file watcher that executes commands based on YAML configuration
+
+    USAGE:
+        watchcat [CONFIG_FILE] [OPTIONS]
+
+    ARGUMENTS:
+        CONFIG_FILE    Path to YAML configuration file (default: watchcat.yml)
+
+    OPTIONS:
+        -h, --help     Show this help message
+
+    EXAMPLES:
+        watchcat                    # Use default watchcat.yml config
+        watchcat my_config.yml      # Use custom config file
+        watchcat --help             # Show this help
+
+    CONFIGURATION:
+        Create a YAML file with the following structure:
+
+        watches:
+          - path: "./src"
+            recursive: true
+            debounce: 500
+            patterns:
+              - "*.rb"
+              - "*.yml"
+            actions:
+              - command: "echo 'File changed: {{file_name}}'"
+              - command: "rubocop {{file_path}}"
+
+    AVAILABLE VARIABLES:
+        {{file_path}}   Full path to the changed file
+        {{file_dir}}    Directory containing the file
+        {{file_name}}   Name of the file (including extension)
+        {{file_base}}   Name of the file without extension
+        {{file_ext}}    File extension (including the dot)
+  HELP
+end
+
+# Check for help flag
+if ARGV.include?("-h") || ARGV.include?("--help")
+  show_help
+  exit 0
+end
+
+config_file = ARGV.find { |arg| !arg.start_with?("-") } || "watchcat.yml"
+
+begin
+  Watchcat::CLI.start(config_file)
+rescue Watchcat::CLI::Error => e
+  puts "Error: #{e.message}"
+  exit 1
+rescue Interrupt
+  puts "\nGoodbye!"
+  exit 0
+end
