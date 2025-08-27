@@ -1,0 +1,14 @@
+# Watchcat Configuration File
+# This file defines which directories to watch and what actions to take when files change
+
+watches:
+  # Watch a source directory for Ruby files
+  - path: "./lib"
+    recursive: true
+    debounce: 300  # Wait 300ms before firing actions for the same file
+    patterns:
+      - "*.rb"
+      - "*.yml"
+    actions:
+      - command: "echo 'Ruby/YAML file changed: {{file_name}}'"
+      - command: "rubocop {{file_path}}"
