@@ -17,7 +17,7 @@ class WatchcatTest < Minitest::Test
 
   def test_watch_directory_without_recursive
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: false, wait_until_startup: true) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
 
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
@@ -44,7 +44,7 @@ class WatchcatTest < Minitest::Test
 
   def test_watch_directory_with_recursive
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: true, wait_until_startup: true) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
 
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
@@ -65,7 +65,7 @@ class WatchcatTest < Minitest::Test
 
   def test_watch_directory_with_recursive_and_debonuce
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, wait_until_startup: true) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200) { |e| events << e }
 
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
@@ -159,7 +159,7 @@ class WatchcatTest < Minitest::Test
 
   def test_watch_with_ignore_remove
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: true, wait_until_startup: true, filters: {ignore_remove: true}) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, filters: {ignore_remove: true}) { |e| events << e }
 
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
@@ -186,7 +186,7 @@ class WatchcatTest < Minitest::Test
 
   def test_watch_with_ignore_remove_and_debounce
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, wait_until_startup: true, filters: {ignore_remove: true}) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 200, filters: {ignore_remove: true}) { |e| events << e }
 
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
@@ -205,7 +205,6 @@ class WatchcatTest < Minitest::Test
     @watchcat = Watchcat.watch(
       @tmpdir,
       recursive: true,
-      wait_until_startup: true,
       filters: {ignore_access: true}
     ) { |e| events << e }
 
@@ -228,7 +227,6 @@ class WatchcatTest < Minitest::Test
     @watchcat = Watchcat.watch(
       @tmpdir,
       recursive: true,
-      wait_until_startup: true,
       filters: {ignore_create: true}
     ) { |e| events << e }
 
@@ -249,7 +247,6 @@ class WatchcatTest < Minitest::Test
     @watchcat = Watchcat.watch(
       @tmpdir,
       recursive: true,
-      wait_until_startup: true,
       filters: {ignore_modify: true}
     ) { |e| events << e }
 

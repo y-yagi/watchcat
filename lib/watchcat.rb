@@ -14,7 +14,6 @@ module Watchcat
       recursive: true,
       force_polling: false,
       poll_interval: nil,
-      wait_until_startup: false,
       filters: {},
       debounce: -1,
       &block
@@ -25,7 +24,6 @@ module Watchcat
           recursive: recursive,
           force_polling: force_polling,
           poll_interval: poll_interval,
-          wait_until_startup: wait_until_startup,
           filters: filters,
           debounce: debounce,
           block: block

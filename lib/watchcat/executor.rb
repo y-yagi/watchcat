@@ -2,12 +2,11 @@ require_relative "event"
 
 module Watchcat
   class Executor
-    def initialize(paths, recursive:, force_polling:, poll_interval:, wait_until_startup:, filters:, debounce:, block:)
+    def initialize(paths, recursive:, force_polling:, poll_interval:, filters:, debounce:, block:)
       @paths = paths
       @recursive = recursive
       @force_polling = force_polling
       @poll_interval = poll_interval
-      @wait_until_startup = wait_until_startup
       @filters = filters || {}
       @debounce = debounce
       @block = block
@@ -21,11 +20,6 @@ module Watchcat
       @watch_thread = Thread.new do
         Thread.current.name = "watchcat-watcher"
         start_watching
-      end
-
-      # If wait_until_startup is true, give the thread a moment to start
-      if @wait_until_startup
-        sleep 0.1
       end
 
       at_exit do
