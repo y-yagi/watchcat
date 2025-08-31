@@ -85,6 +85,61 @@ sleep
 **CAUTION** The `watchcat` doesn't normalize the events. So the result might change per the platform.
 
 
+## CLI
+
+`watchcat` comes with a command-line interface that allows you to watch files and execute commands when changes occur.
+
+### Usage
+
+```
+$ watchcat -C config.yml
+```
+
+### Configuration File
+
+The configuration file should be in YAML format. Here's an example:
+
+```yaml
+watches:
+  - path: "./lib"
+    recursive: true
+    debounce: 300
+    filters:
+      ignore_access: true
+    patterns:
+      - "*.rb"
+      - "*.yml"
+    actions:
+      - command: "echo 'Ruby/YAML file changed: {{file_name}}'"
+      - command: "rubocop {{file_path}}"
+```
+
+### Configuration Options
+
+Each watch entry supports the following options:
+
+| Option      | Description                                            | Default |
+|-------------|--------------------------------------------------------|---------|
+| path        | Directory or file path to watch (required)             | -       |
+| recursive   | Watch a directory recursively or not                   | `true`  |
+| debounce    | Debounce events for the same file (in milliseconds)    | `500`   |
+| filters     | Event filters (same as library filters option)         | `{}`    |
+| patterns    | File patterns to match (using File.fnmatch)            | `[]`    |
+| actions     | Commands to execute when files change                  | `[]`    |
+
+### Available Variables for Commands
+
+When specifying commands, you can use the following variables:
+
+| Variable      | Description                              | Example                |
+|---------------|------------------------------------------|------------------------|
+| {{file_path}} | Full path of the changed file            | `/home/user/app/file.rb` |
+| {{file_dir}}  | Directory containing the file            | `/home/user/app`        |
+| {{file_name}} | File name with extension                 | `file.rb`               |
+| {{file_base}} | File name without extension              | `file`                  |
+| {{file_ext}}  | File extension                           | `.rb`                   |
+
+
 ### Options
 
 | Name                       | Description                              | Default           |
