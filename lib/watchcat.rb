@@ -1,5 +1,6 @@
 require_relative "watchcat/version"
 require_relative "watchcat/executor"
+require_relative "watchcat/debouncer"
 
 begin
   require "watchcat/#{RUBY_VERSION.to_f}/watchcat"
