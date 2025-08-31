@@ -44,6 +44,7 @@ module Watchcat
         watcher = Watchcat.watch(
           path,
           recursive: watch_config[:recursive],
+          filters: watch_config[:filters],
         ) do |event|
           handle_file_event(event, watch_config)
         end
@@ -57,7 +58,7 @@ module Watchcat
         event.paths.each do |file_path|
           next unless should_process_file?(file_path, watch_config[:patterns])
 
-          puts "File changed: #{file_path}"
+          puts "File changed: #{file_path} #{event.kind}"
           execute_actions(file_path, event, watch_config[:actions])
         end
       end

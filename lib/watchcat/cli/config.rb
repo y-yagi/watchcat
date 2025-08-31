@@ -32,7 +32,7 @@ module Watchcat
             patterns: watch_config["patterns"] || [],
             actions: watch_config["actions"] || [],
             debounce: watch_config.fetch("debounce", 500),
-            filters: watch_config["filters"] || {},
+            filters: watch_config["filters"]&.transform_keys(&:to_sym) || {},
           }
         end
       end
