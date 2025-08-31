@@ -87,14 +87,21 @@ class Watchcat::KindTest < Minitest::Test
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: false, debounce: 100) { |e| events << e }
     sleep 0.2
-    FileUtils.touch(File.join(@tmpdir, "a.txt"))
-    sleep 0.4
+    3.times { FileUtils.touch(File.join(@tmpdir, "a.txt")) }
+    sleep 1
 
-    assert_equal 1, events.count, inspect_events(events)
+    if mac_os? || windows?
+      assert_equal 1, events.count, inspect_events(events)
+    else
+      assert_equal 3, events.count, inspect_events(events)
+    end
     event = events.first
-    assert event.kind.any?
-    assert event.kind.any.file?
-    refute event.kind.any.folder?
+    event = events.first
+    assert event.kind.create?
+    unless windows?
+      assert event.kind.create.file?
+      refute event.kind.create.folder?
+    end
   end
 
   def test_create_directory
@@ -120,13 +127,15 @@ class Watchcat::KindTest < Minitest::Test
     sleep 0.2
     dir = File.join(@tmpdir, "dir")
     Dir.mkdir(dir)
-    sleep 0.4
+    sleep 1
 
     assert_equal 1, events.count, inspect_events(events)
     event = events.first
-    assert event.kind.any?
-    refute event.kind.any.file?
-    assert event.kind.any.folder?
+    assert event.kind.create?
+    unless windows?
+      refute event.kind.create.file?
+      assert event.kind.create.folder?
+    end
   end
 
   def test_mv_file
