@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    watchcat (0.3.0)
+    watchcat (0.4.0)
       psych
       rb_sys
 
