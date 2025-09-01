@@ -84,6 +84,34 @@ sleep
 
 **CAUTION** The `watchcat` doesn't normalize the events. So the result might change per the platform.
 
+### Options
+
+| Name                       | Description                              | Default           |
+| -------------------------- | -----------------------------------------| ----------------- |
+| **recursive**              | Watch a directory recursively or not.    | `true`            |
+| **force_polling**          | Force to use a polling to watch.         | `false`           |
+| **debounce**               | Debounce events for the same file.       | `-1`              |
+
+
+### Filters Option
+
+You can use the `filters` option to ignore specific event types:
+
+| Key             | Description                       |
+|-----------------|-----------------------------------|
+| ignore_remove   | Ignore remove (delete) events     |
+| ignore_access   | Ignore access events              |
+| ignore_create   | Ignore create events              |
+| ignore_modify   | Ignore modify events              |
+
+Example usage:
+
+```ruby
+Watchcat.watch("/tmp/test", filters: { ignore_remove: true, ignore_access: true }) do |e|
+  pp e.paths, e.kind
+end
+```
+
 
 ## CLI
 
@@ -139,34 +167,6 @@ When specifying commands, you can use the following variables:
 | {{file_base}} | File name without extension              | `file`                  |
 | {{file_ext}}  | File extension                           | `.rb`                   |
 
-
-### Options
-
-| Name                       | Description                              | Default           |
-| -------------------------- | -----------------------------------------| ----------------- |
-| **recursive**              | Watch a directory recursively or not.    | `true`            |
-| **force_polling**          | Force to use a polling to watch.         | `false`           |
-| **debounce**               | Debounce events for the same file.       | `-1`              |
-
-
-### Filters Option
-
-You can use the `filters` option to ignore specific event types:
-
-| Key             | Description                       |
-|-----------------|-----------------------------------|
-| ignore_remove   | Ignore remove (delete) events     |
-| ignore_access   | Ignore access events              |
-| ignore_create   | Ignore create events              |
-| ignore_modify   | Ignore modify events              |
-
-Example usage:
-
-```ruby
-Watchcat.watch("/tmp/test", filters: { ignore_remove: true, ignore_access: true }) do |e|
-  pp e.paths, e.kind
-end
-```
 
 
 ## Contributing
