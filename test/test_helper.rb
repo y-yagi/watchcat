@@ -7,6 +7,8 @@ require "debug"
 if ENV["CI"]
   require 'minitest/retry'
   Minitest::Retry.use!
+else
+  require "minitest/fail_fast"
 end
 
 def inspect_events(events)

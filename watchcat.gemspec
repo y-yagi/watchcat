@@ -32,6 +32,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "debug"
   spec.add_development_dependency "minitest"
   spec.add_development_dependency "minitest-retry"
+  spec.add_development_dependency "minitest-fail-fast"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rake-compiler"
   spec.add_development_dependency "ruby_memcheck"
