@@ -9,6 +9,7 @@ module Watchcat
       @poll_interval = poll_interval
       @filters = filters || {}
       @debounce = debounce
+      @debouncer = Debouncer.new if @debounce > 0
       @block = block
       @watcher = Watchcat::Watcher.new
       @watch_thread = nil
@@ -46,13 +47,19 @@ module Watchcat
         ignore_remove: @filters[:ignore_remove],
         ignore_access: @filters[:ignore_access],
         ignore_create: @filters[:ignore_create],
-        ignore_modify: @filters[:ignore_modify],
-        debounce: @debounce
+        ignore_modify: @filters[:ignore_modify]
       ) do |kind, paths, raw_kind|
         break if @stop_requested
 
-        event = Watchcat::Event.new(kind, paths, raw_kind)
-        @block.call(event)
+        if @debounce > 0 && paths.size == 1
+          @debouncer.debounce(paths[0], @debounce) do
+            event = Watchcat::Event.new(kind, paths, raw_kind)
+            @block.call(event)
+          end
+        else
+          event = Watchcat::Event.new(kind, paths, raw_kind)
+          @block.call(event)
+        end
       end
     end
   end

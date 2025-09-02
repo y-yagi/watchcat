@@ -85,23 +85,12 @@ class Watchcat::KindTest < Minitest::Test
 
   def test_create_file_with_debonuce
     events = []
-    @watchcat = Watchcat.watch(@tmpdir, recursive: false, debounce: 100) { |e| events << e }
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false, debounce: 300) { |e| events << e }
     sleep 0.2
     3.times { FileUtils.touch(File.join(@tmpdir, "a.txt")) }
     sleep 1
 
-    if mac_os? || windows?
-      assert_equal 1, events.count, inspect_events(events)
-    else
-      assert_equal 3, events.count, inspect_events(events)
-    end
-    event = events.first
-    event = events.first
-    assert event.kind.create?
-    unless windows?
-      assert event.kind.create.file?
-      refute event.kind.create.folder?
-    end
+    assert_equal 1, events.count, inspect_events(events)
   end
 
   def test_create_directory

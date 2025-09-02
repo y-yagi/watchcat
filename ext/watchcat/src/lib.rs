@@ -7,7 +7,6 @@ use magnus::{
     Error, Module, Object, Value,
 };
 use notify::{Config, PollWatcher, RecommendedWatcher, RecursiveMode, Watcher};
-use notify_debouncer_full::new_debouncer;
 use std::{path::Path, time::Duration, sync::{Arc, atomic::{AtomicBool, Ordering}}};
 
 mod event;
@@ -50,7 +49,7 @@ impl WatchcatWatcher {
             return Err(Error::new(magnus::exception::arg_error(), "no block given"));
         }
 
-    let (pathnames, recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, debounce) = Self::parse_args(args)?;
+    let (pathnames, recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify) = Self::parse_args(args)?;
         let mode = if recursive {
             RecursiveMode::Recursive
         } else {
@@ -60,19 +59,13 @@ impl WatchcatWatcher {
         let terminated = self.terminated.clone();
         let rx_clone = self.rx.clone();
 
-        if debounce >= 0 {
-            Self::watch_with_debounce_threaded(
-                pathnames, mode, ignore_remove, ignore_access, ignore_create, ignore_modify, debounce, terminated, rx_clone
-            )
-        } else {
-            Self::watch_without_debounce_threaded(
-                pathnames, mode, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, terminated, rx_clone
-            )
-        }
+        Self::watch_threaded(
+            pathnames, mode, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, terminated, rx_clone
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn watch_without_debounce_threaded(
+    fn watch_threaded(
         pathnames: Vec<String>,
         mode: RecursiveMode,
         force_polling: bool,
@@ -173,93 +166,10 @@ impl WatchcatWatcher {
         })
     }
 
-    #[allow(clippy::too_many_arguments)]
-    fn watch_with_debounce_threaded(
-        pathnames: Vec<String>,
-        mode: RecursiveMode,
-        ignore_remove: bool,
-        ignore_access: bool,
-        ignore_create: bool,
-        ignore_modify: bool,
-        debounce: i64,
-        terminated: Arc<AtomicBool>,
-        rx: crossbeam_channel::Receiver<bool>
-    ) -> Result<bool, Error> {
-        call_without_gvl(move || {
-            let (tx, watcher_rx) = unbounded();
-            let mut debouncer = new_debouncer(Duration::from_millis(debounce.try_into().unwrap()), None, tx).unwrap();
-            for pathname in &pathnames {
-                let path = Path::new(pathname);
-                debouncer
-                    .watch(path, mode)
-                    .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
-            }
-
-            loop {
-                if terminated.load(Ordering::SeqCst) {
-                    break Ok(true);
-                }
-
-                select! {
-                    recv(rx) -> _res => {
-                        break Ok(true);
-                    }
-                    recv(watcher_rx) -> res => {
-                        match res {
-                            Ok(events) => {
-                                match events {
-                                    Ok(events) => {
-                                        for debounced_event in events.iter() {
-                                            let event = &debounced_event.event;
-                                            let paths = event.paths.iter()
-                                                .map(|p| p.to_string_lossy().into_owned())
-                                                .collect::<Vec<_>>();
-
-                                            if ignore_remove && paths.iter().any(|p| !Path::new(p).exists()) {
-                                                continue;
-                                            }
-                                            if ignore_access && format!("{:?}", event.kind).contains("Access") {
-                                                continue;
-                                            }
-                                            if ignore_create && format!("{:?}", event.kind).contains("Create") {
-                                                continue;
-                                            }
-                                            if ignore_modify && format!("{:?}", event.kind).contains("Modify") {
-                                                continue;
-                                            }
-
-                                            // Yield to Ruby with GVL
-                                            let result = call_with_gvl(|_| {
-                                                yield_value::<(Vec<String>, Vec<String>, String), Value>(
-                                                    (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
-                                                )
-                                            });
-
-                                            if result.is_err() {
-                                                return Err(Error::new(magnus::exception::runtime_error(), "Error yielding to Ruby block"));
-                                            }
-                                        }
-                                    }
-                                    Err(e) => {
-                                        break Err(Error::new(magnus::exception::runtime_error(), format!("{:?}", e)));
-                                    }
-                                }
-                            }
-                            Err(e) => {
-                                break Err(Error::new(magnus::exception::runtime_error(), e.to_string()));
-                            }
-                        }
-                    }
-                }
-            }
-        })
-    }
-
     #[allow(clippy::let_unit_value, clippy::type_complexity)]
-    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64, bool, bool, bool, bool, i64), Error> {
+    fn parse_args(args: &[Value]) -> Result<(Vec<String>, bool, bool, u64, bool, bool, bool, bool), Error> {
         type KwArgBool = Option<Option<bool>>;
         type KwArgU64 = Option<Option<u64>>;
-        type KwArgi64 = Option<Option<i64>>;
 
         let args = scan_args(args)?;
         let (paths,): (Vec<String>,) = args.required;
@@ -271,9 +181,9 @@ impl WatchcatWatcher {
         let kwargs = get_kwargs(
             args.keywords,
             &[],
-            &["recursive", "force_polling", "poll_interval", "ignore_remove", "ignore_access", "ignore_create", "ignore_modify", "debounce"],
+            &["recursive", "force_polling", "poll_interval", "ignore_remove", "ignore_access", "ignore_create", "ignore_modify"],
         )?;
-        let (recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, debounce): (KwArgBool, KwArgBool, KwArgU64, KwArgBool, KwArgBool, KwArgBool, KwArgBool, KwArgi64) =
+        let (recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify): (KwArgBool, KwArgBool, KwArgU64, KwArgBool, KwArgBool, KwArgBool, KwArgBool) =
             kwargs.optional;
         let _: () = kwargs.required;
         let _: () = kwargs.splat;
@@ -287,7 +197,6 @@ impl WatchcatWatcher {
             ignore_access.flatten().unwrap_or(false),
             ignore_create.flatten().unwrap_or(false),
             ignore_modify.flatten().unwrap_or(false),
-            debounce.flatten().unwrap_or(-1),
         ))
     }
 }
