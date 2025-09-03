@@ -11,6 +11,7 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     name: Test (Ruby ${{ matrix.ruby }} on ${{ matrix.os }})
+    timeout-minutes: 5
     strategy:
       matrix:
         ruby:
@@ -42,6 +43,7 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     name: Clippy
+    timeout-minutes: 5
 
     steps:
       - name: Check out code
@@ -60,6 +62,7 @@ jobs:
   windows:
     runs-on: ${{ matrix.os }}
     name: Test (Ruby ${{ matrix.ruby }} on ${{ matrix.os }})
+    timeout-minutes: 5
     strategy:
       matrix:
         ruby:
