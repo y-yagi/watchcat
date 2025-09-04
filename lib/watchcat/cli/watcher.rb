@@ -58,7 +58,7 @@ module Watchcat
         event.paths.each do |file_path|
           next unless should_process_file?(file_path, watch_config[:patterns])
 
-          puts "File changed: #{file_path} #{event.kind}"
+          puts "File changed: #{file_path}"
           execute_actions(file_path, event, watch_config[:actions])
         end
       end
