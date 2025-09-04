@@ -45,6 +45,7 @@ module Watchcat
           path,
           recursive: watch_config[:recursive],
           filters: watch_config[:filters],
+          debounce: watch_config[:debounce],
         ) do |event|
           handle_file_event(event, watch_config)
         end
