@@ -150,7 +150,7 @@ Each watch entry supports the following options:
 |-------------|--------------------------------------------------------|---------|
 | path        | Directory or file path to watch (required)             | -       |
 | recursive   | Watch a directory recursively or not                   | `true`  |
-| debounce    | Debounce events for the same file (in milliseconds)    | `500`   |
+| debounce    | Debounce events for the same file (in milliseconds)    | `-1`    |
 | filters     | Event filters (same as library filters option)         | `{}`    |
 | patterns    | File patterns to match (using File.fnmatch)            | `[]`    |
 | actions     | Commands to execute when files change                  | `[]`    |

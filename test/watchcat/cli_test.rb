@@ -81,7 +81,7 @@ class Watchcat::CLITest < Minitest::Test
       File.write(config_file, config_content)
 
       config = Watchcat::CLI::Config.load(config_file)
-      assert_equal 500, config.watches.first[:debounce]  # Default value
+      assert_equal(-1, config.watches.first[:debounce])
     end
   end
 end
