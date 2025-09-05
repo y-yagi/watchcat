@@ -120,7 +120,11 @@ end
 ### Usage
 
 ```
+# Run watchcat with a config file
 $ watchcat -C config.yml
+
+# Generate a template config file
+$ watchcat --init config.yml
 ```
 
 ### Configuration File

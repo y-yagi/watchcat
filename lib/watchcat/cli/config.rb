@@ -22,6 +22,37 @@ module Watchcat
         end
       end
 
+      def self.generate_template(file_path)
+        template = <<~YAML
+          # Watchcat Configuration File
+
+          watches:
+            - path: "./src"
+              recursive: true
+              debounce: 300
+              patterns:
+                - "*.js"
+                - "*.ts"
+                - "*.css"
+              actions:
+                - command: "echo 'File changed: {{file_path}}'"
+
+            - path: "./docs"
+              recursive: true
+              patterns:
+                - "*.md"
+              actions:
+                - command: "echo 'Documentation updated: {{file_name}}'"
+        YAML
+
+        if File.exist?(file_path)
+          raise Error, "File already exists: #{file_path}. Won't overwrite."
+        end
+
+        File.write(file_path, template)
+        puts "Config template generated at #{file_path}"
+      end
+
       private
 
       def parse_watches(watches_data)
