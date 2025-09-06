@@ -1,6 +1,7 @@
 ## 0.5.0
 
 * Rework the debounce feature. Now all events are debounced.
+* Add `init` option to CLI
 
 ## 0.4.0
 
