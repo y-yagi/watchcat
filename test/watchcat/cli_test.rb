@@ -52,7 +52,6 @@ class Watchcat::CLITest < Minitest::Test
 
       executor = Watchcat::CLI::ActionExecutor.new(test_file, event)
 
-      # Test variable substitution
       template = "File: {{file_name}}, Dir: {{file_dir}}"
       result = executor.send(:substitute_variables, template)
 
@@ -82,6 +81,38 @@ class Watchcat::CLITest < Minitest::Test
 
       config = Watchcat::CLI::Config.load(config_file)
       assert_equal(-1, config.watches.first[:debounce])
+    end
+  end
+
+  def test_generate_template
+    Dir.mktmpdir do |tmpdir|
+      config_file = File.join(tmpdir, "template_config.yml")
+
+      Watchcat::CLI::Config.generate_template(config_file)
+
+      assert File.exist?(config_file)
+
+      content = File.read(config_file)
+      assert_includes content, "# Watchcat Configuration File"
+      assert_includes content, "watches:"
+
+      config = Watchcat::CLI::Config.load(config_file)
+      assert_equal 2, config.watches.length
+      assert_equal "./src", config.watches.first[:path]
+    end
+  end
+
+  def test_generate_template_existing_file
+    Dir.mktmpdir do |tmpdir|
+      config_file = File.join(tmpdir, "existing_config.yml")
+
+      File.write(config_file, "# Existing file")
+
+      error = assert_raises(Watchcat::CLI::Error) do
+        Watchcat::CLI::Config.generate_template(config_file)
+      end
+
+      assert_includes error.message, "File already exists"
     end
   end
 end
