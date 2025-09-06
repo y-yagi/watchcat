@@ -23,11 +23,11 @@ module Watchcat
       end
 
       def parse(argv)
-        options = {}
+        options = { config: 'watchcat.yml' }
         OptionParser.new do |opts|
           opts.banner = "Usage: watchcat [options]"
 
-          opts.on("-C", "--config PATH", "Path to the config file") do |v|
+          opts.on("-C", "--config PATH", "Path to the config file. Default is 'watchcat.yml'.") do |v|
             options[:config] = v
           end
 
