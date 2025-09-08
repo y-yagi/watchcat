@@ -1,10 +1,8 @@
 use crossbeam_channel::{select, unbounded};
 use magnus::{
-    block::{block_given, yield_value},
-    class::object,
-    define_module, function, method,
+    function, method,
     scan_args::{get_kwargs, scan_args},
-    Error, Module, Object, Value,
+    Error, Module, Object, Value, Ruby
 };
 use notify::{Config, PollWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{path::Path, time::Duration, sync::{Arc, atomic::{AtomicBool, Ordering}}};
@@ -45,11 +43,13 @@ impl WatchcatWatcher {
     }
 
     fn watch(&self, args: &[Value]) -> Result<bool, Error> {
-        if !block_given() {
-            return Err(Error::new(magnus::exception::arg_error(), "no block given"));
+        let ruby = unsafe { Ruby::get_unchecked() };
+        let ruby_ref = &ruby;
+        if !ruby_ref.block_given() {
+            return Err(Error::new(ruby_ref.exception_arg_error(), "no block given"));
         }
 
-    let (pathnames, recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify) = Self::parse_args(args)?;
+        let (pathnames, recursive, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify) = Self::parse_args(args)?;
         let mode = if recursive {
             RecursiveMode::Recursive
         } else {
@@ -60,7 +60,7 @@ impl WatchcatWatcher {
         let rx_clone = self.rx.clone();
 
         Self::watch_threaded(
-            pathnames, mode, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, terminated, rx_clone
+            pathnames, mode, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, terminated, rx_clone, ruby_ref
         )
     }
 
@@ -75,7 +75,8 @@ impl WatchcatWatcher {
         ignore_create: bool,
         ignore_modify: bool,
         terminated: Arc<AtomicBool>,
-        rx: crossbeam_channel::Receiver<bool>
+        rx: crossbeam_channel::Receiver<bool>,
+        ruby: &Ruby
     ) -> Result<bool, Error> {
         call_without_gvl(move || {
             let (tx, watcher_rx) = unbounded();
@@ -85,23 +86,23 @@ impl WatchcatWatcher {
                     let delay = Duration::from_millis(poll_interval);
                     let config = notify::Config::default().with_poll_interval(delay);
                     let mut watcher = PollWatcher::new(tx, config)
-                        .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                        .map_err(|e| Error::new(ruby.exception_arg_error(), e.to_string()))?;
                     for pathname in &pathnames {
                         let path = Path::new(pathname);
                         watcher
                             .watch(path, mode)
-                            .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                            .map_err(|e| Error::new(ruby.exception_arg_error(), e.to_string()))?;
                     }
                     WatcherEnum::Poll(watcher)
                 }
                 false => {
                     let mut watcher = RecommendedWatcher::new(tx, Config::default())
-                        .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                        .map_err(|e| Error::new(ruby.exception_arg_error(), e.to_string()))?;
                     for pathname in &pathnames {
                         let path = Path::new(pathname);
                         watcher
                             .watch(path, mode)
-                            .map_err(|e| Error::new(magnus::exception::arg_error(), e.to_string()))?;
+                            .map_err(|e| Error::new(ruby.exception_arg_error(), e.to_string()))?;
                     }
                     WatcherEnum::Recommended(watcher)
                 }
@@ -142,22 +143,22 @@ impl WatchcatWatcher {
 
                                         // Yield to Ruby with GVL
                                         let result = call_with_gvl(|_| {
-                                            yield_value::<(Vec<String>, Vec<String>, String), Value>(
+                                            ruby.yield_value::<(Vec<String>, Vec<String>, String), Value>(
                                                 (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
                                             )
                                         });
 
                                         if result.is_err() {
-                                            break Err(Error::new(magnus::exception::runtime_error(), "Error yielding to Ruby block"));
+                                            break Err(Error::new(ruby.exception_runtime_error(), "Error yielding to Ruby block"));
                                         }
                                     }
                                     Err(e) => {
-                                        break Err(Error::new(magnus::exception::runtime_error(), e.to_string()));
+                                        break Err(Error::new(ruby.exception_runtime_error(), e.to_string()));
                                     }
                                 }
                             }
                             Err(e) => {
-                                break Err(Error::new(magnus::exception::runtime_error(), e.to_string()));
+                                break Err(Error::new(ruby.exception_runtime_error(), e.to_string()));
                             }
                         }
                     }
@@ -202,10 +203,10 @@ impl WatchcatWatcher {
 }
 
 #[magnus::init]
-fn init() -> Result<(), Error> {
-    let module = define_module("Watchcat")?;
+fn init(ruby: &Ruby) -> Result<(), Error> {
+    let module = ruby.define_module("Watchcat")?;
 
-    let watcher_class = module.define_class("Watcher", object())?;
+    let watcher_class = module.define_class("Watcher", ruby.class_object())?;
     watcher_class.define_singleton_method("new", function!(WatchcatWatcher::new, 0))?;
     watcher_class.define_method("watch", method!(WatchcatWatcher::watch, -1))?;
     watcher_class.define_method("close", method!(WatchcatWatcher::close, 0))?;
