@@ -54,8 +54,6 @@ module Watchcat
       end
 
       def handle_file_event(event, watch_config)
-        return if event.kind.access?
-
         event.paths.each do |file_path|
           next unless should_process_file?(file_path, watch_config[:patterns])
 

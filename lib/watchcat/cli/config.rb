@@ -30,6 +30,8 @@ module Watchcat
             - path: "./src"
               recursive: true
               debounce: 300
+              filters:
+                ignore_access: true
               patterns:
                 - "*.js"
                 - "*.ts"
@@ -39,6 +41,8 @@ module Watchcat
 
             - path: "./docs"
               recursive: true
+              filters:
+                ignore_access: true
               patterns:
                 - "*.md"
               actions:
