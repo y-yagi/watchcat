@@ -1,3 +1,7 @@
+## 0.5.1
+
+* Fix missing executable files
+
 ## 0.5.0
 
 * Rework the debounce feature. Now all events are debounced.
