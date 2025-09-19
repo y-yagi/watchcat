@@ -47,16 +47,18 @@ class Watchcat::CLITest < Minitest::Test
         def mock_kind.create?; false; end
         def mock_kind.remove?; false; end
         def mock_kind.access?; false; end
+        def mock_kind.event_type; "modify"; end
         mock_kind
       end
 
       executor = Watchcat::CLI::ActionExecutor.new(test_file, event)
 
-      template = "File: {{file_name}}, Dir: {{file_dir}}"
+      template = "File: {{file_name}}, Dir: {{file_dir}}, Type: {{event_type}}"
       result = executor.send(:substitute_variables, template)
 
       assert_includes result, "test.rb"
       assert_includes result, tmpdir
+      assert_includes result, "modify"
     end
   end
 
