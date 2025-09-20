@@ -27,6 +27,14 @@ module Watchcat
     def any?
       !@any.nil?
     end
+
+    def event_type
+      return "create" if create?
+      return "modify" if modify?
+      return "remove" if remove?
+      return "access" if access?
+      "unknown"
+    end
   end
 
   class AccessKind

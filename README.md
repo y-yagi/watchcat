@@ -163,15 +163,14 @@ Each watch entry supports the following options:
 
 When specifying commands, you can use the following variables:
 
-| Variable      | Description                              | Example                |
-|---------------|------------------------------------------|------------------------|
-| {{file_path}} | Full path of the changed file            | `/home/user/app/file.rb` |
-| {{file_dir}}  | Directory containing the file            | `/home/user/app`        |
-| {{file_name}} | File name with extension                 | `file.rb`               |
-| {{file_base}} | File name without extension              | `file`                  |
-| {{file_ext}}  | File extension                           | `.rb`                   |
-
-
+| Variable       | Description                              | Example                  |
+|----------------|------------------------------------------|--------------------------|
+| {{file_path}}  | Full path of the changed file            | `/home/user/app/file.rb` |
+| {{file_dir}}   | Directory containing the file            | `/home/user/app`         |
+| {{file_name}}  | File name with extension                 | `file.rb`                |
+| {{file_base}}  | File name without extension              | `file`                   |
+| {{file_ext}}   | File extension                           | `.rb`                    |
+| {{event_type}} | Type of even                             | `create`                 |
 
 ## Contributing
 

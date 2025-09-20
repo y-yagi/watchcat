@@ -37,6 +37,7 @@ module Watchcat
           .gsub("{{file_name}}", @file_name)
           .gsub("{{file_base}}", @file_base)
           .gsub("{{file_ext}}", @file_ext)
+          .gsub("{{event_type}}", @event.kind.event_type)
       end
     end
   end
