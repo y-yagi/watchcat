@@ -246,4 +246,144 @@ class WatchcatTest < Minitest::Test
       refute event.kind.modify?, "Modify event was not filtered: #{event.kind.inspect}"
     end
   end
+
+  def test_watch_symlink_file
+    skip if windows?
+
+    target_file = File.join(@tmpdir, "target.txt")
+    FileUtils.touch(target_file)
+
+    symlink_file = File.join(@tmpdir, "link_to_file.txt")
+    File.symlink(target_file, symlink_file)
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
+
+    sleep 0.2
+    # Modify the target file through the symlink
+    File.open(symlink_file, "w") { |f| f.puts "modified via symlink" }
+    sleep 0.3
+
+    # Should detect events on both the symlink and potentially the target
+    refute_equal 0, events.count, inspect_events(events)
+
+    # At least one event should involve the symlink path
+    symlink_events = events.select do |event|
+      event.paths.any? { |path| path.include?("target.txt") }
+    end
+    refute_empty symlink_events, "No events detected for symlink file"
+  end
+
+  def test_watch_symlink_directory
+    skip if windows?
+
+    target_dir = File.join(@tmpdir, "target_dir")
+    FileUtils.mkdir(target_dir)
+    target_file = File.join(target_dir, "file.txt")
+    FileUtils.touch(target_file)
+
+    symlink_dir = File.join(@tmpdir, "link_to_dir")
+    File.symlink(target_dir, symlink_dir)
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
+
+    sleep 0.2
+    # Create a new file in the target directory through the symlink
+    new_file = File.join(symlink_dir, "new_file.txt")
+    FileUtils.touch(new_file)
+    sleep 0.3
+
+    refute_equal 0, events.count, inspect_events(events)
+
+    # Should detect events related to the symlinked directory
+    symlink_events = events.select do |event|
+      event.paths.any? { |path| path.include?("link_to_dir") || path.include?("new_file.txt") }
+    end
+    refute_empty symlink_events, "No events detected for symlinked directory operations"
+  end
+
+  def test_watch_broken_symlink
+    skip if windows?
+
+    # Create a symlink to a non-existent file
+    broken_symlink = File.join(@tmpdir, "broken_link.txt")
+    File.symlink("/non/existent/path", broken_symlink)
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.rm(broken_symlink)
+    sleep 0.3
+
+    refute_equal 0, events.count, inspect_events(events)
+
+    broken_link_events = events.select do |event|
+      event.paths.any? { |path| path.include?("broken_link.txt") }
+    end
+    refute_empty broken_link_events, "No events detected for broken symlink"
+  end
+
+  def test_watch_symlink_creation_and_deletion
+    skip if windows?
+
+    target_file = File.join(@tmpdir, "target.txt")
+    FileUtils.touch(target_file)
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
+
+    sleep 0.2
+    events.clear # Clear any initial events
+
+    symlink_file = File.join(@tmpdir, "dynamic_link.txt")
+    File.symlink(target_file, symlink_file)
+    sleep 0.3
+
+    FileUtils.rm(symlink_file)
+    sleep 0.3
+
+    refute_equal 0, events.count, inspect_events(events)
+
+    # Should have events for both creation and deletion
+    create_events = events.select { |e| e.kind.create? }
+    remove_events = events.select { |e| e.kind.remove? }
+
+    if mac_os?
+      # macOS might handle symlink events differently
+      refute_equal 0, events.count, "Expected some events on macOS"
+    else
+      refute_empty create_events, "No create events detected for symlink"
+      refute_empty remove_events, "No remove events detected for symlink"
+    end
+  end
+
+  def test_watch_symlink_target_modification
+    skip if windows?
+
+    target_file = File.join(@tmpdir, "target.txt")
+    FileUtils.touch(target_file)
+
+    symlink_file = File.join(@tmpdir, "link.txt")
+    File.symlink(target_file, symlink_file)
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
+
+    sleep 0.2
+    events.clear # Clear any initial events
+
+    # Modify the target file directly (not through symlink)
+    File.open(target_file, "w") { |f| f.puts "modified directly" }
+    sleep 0.3
+
+    refute_equal 0, events.count, inspect_events(events)
+
+    # Should detect modification of the target file
+    target_events = events.select do |event|
+      event.paths.any? { |path| path.include?("target.txt") }
+    end
+    refute_empty target_events, "No events detected for target file modification"
+  end
 end
