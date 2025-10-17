@@ -170,7 +170,7 @@ When specifying commands, you can use the following variables:
 | {{file_name}}  | File name with extension                 | `file.rb`                |
 | {{file_base}}  | File name without extension              | `file`                   |
 | {{file_ext}}   | File extension                           | `.rb`                    |
-| {{event_type}} | Type of even                             | `create`                 |
+| {{event_type}} | Type of event                            | `create`                 |
 
 ## Contributing
 
