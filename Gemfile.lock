@@ -30,7 +30,7 @@ GEM
     minitest (5.27.0)
     minitest-fail-fast (0.1.0)
       minitest (~> 5)
-    minitest-retry (0.2.5)
+    minitest-retry (0.3.0)
       minitest (>= 5.0)
     nokogiri (1.18.1-arm64-darwin)
       racc (~> 1.4)
