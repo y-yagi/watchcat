@@ -13,10 +13,15 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     erb (6.0.1)
+    ffi (1.17.3-aarch64-linux-gnu)
+    ffi (1.17.3-aarch64-linux-musl)
+    ffi (1.17.3-arm-linux-gnu)
+    ffi (1.17.3-arm-linux-musl)
     ffi (1.17.3-arm64-darwin)
     ffi (1.17.3-x64-mingw-ucrt)
     ffi (1.17.3-x86_64-darwin)
     ffi (1.17.3-x86_64-linux-gnu)
+    ffi (1.17.3-x86_64-linux-musl)
     io-console (0.8.2)
     irb (1.16.0)
       pp (>= 0.6.0)
@@ -30,6 +35,14 @@ GEM
       minitest (~> 5)
     minitest-retry (0.3.0)
       minitest (>= 5.0)
+    nokogiri (1.19.0-aarch64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.19.0-aarch64-linux-musl)
+      racc (~> 1.4)
+    nokogiri (1.19.0-arm-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.19.0-arm-linux-musl)
+      racc (~> 1.4)
     nokogiri (1.19.0-arm64-darwin)
       racc (~> 1.4)
     nokogiri (1.19.0-x64-mingw-ucrt)
@@ -37,6 +50,8 @@ GEM
     nokogiri (1.19.0-x86_64-darwin)
       racc (~> 1.4)
     nokogiri (1.19.0-x86_64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.19.0-x86_64-linux-musl)
       racc (~> 1.4)
     pp (0.6.3)
       prettyprint
@@ -66,12 +81,15 @@ GEM
     tsort (0.2.0)
 
 PLATFORMS
-  arm64-darwin-22
-  arm64-darwin-23
+  aarch64-linux-gnu
+  aarch64-linux-musl
+  arm-linux-gnu
+  arm-linux-musl
+  arm64-darwin
   x64-mingw-ucrt
-  x86_64-darwin-19
-  x86_64-darwin-20
-  x86_64-linux
+  x86_64-darwin
+  x86_64-linux-gnu
+  x86_64-linux-musl
 
 DEPENDENCIES
   debug
