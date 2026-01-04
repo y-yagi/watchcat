@@ -9,3 +9,4 @@
 *.so
 /target
 .ruby-version
+Gemfile.lock
