@@ -1,3 +1,7 @@
+## 0.5.2
+
+* Support Ruby 4.0
+
 ## 0.5.1
 
 * Fix missing executable files
