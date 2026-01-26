@@ -27,7 +27,7 @@ jobs:
       OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
 
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: Set up Ruby & Rust
       uses: oxidize-rb/actions/setup-ruby-and-rust@08e22a43e1771991320b75fe2dfb29d8e3f46668
@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Ruby & Rust
         uses: oxidize-rb/actions/setup-ruby-and-rust@4c939d516bd77ec5806f382c9bb574f4634098a7 # v1.4.2
@@ -72,7 +72,7 @@ jobs:
           - windows-latest
 
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: Set up Ruby & Rust
       uses: oxidize-rb/actions/setup-ruby-and-rust@4c939d516bd77ec5806f382c9bb574f4634098a7
