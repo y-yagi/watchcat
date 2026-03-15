@@ -2,6 +2,30 @@ name: release
 on: workflow_dispatch
 
 jobs:
+  release-source:
+    name: Build source gem
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+    - uses: oxidize-rb/actions/setup-ruby-and-rust@4c939d516bd77ec5806f382c9bb574f4634098a7 # v1.4.2
+      with:
+        ruby-version: "3.3"
+
+    - name: Configure trusted publishing credentials
+      uses: rubygems/configure-rubygems-credentials@bc6dd217f8a4f919d6835fcfefd470ef821f5c44 # v1.0.0
+
+    - name: Release source gem
+      run: |
+        gem build watchcat.gemspec
+        gem push watchcat-*.gem
+
   release:
     name: Build native gems
     runs-on: ubuntu-latest
