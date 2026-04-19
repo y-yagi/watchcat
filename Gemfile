@@ -2,5 +2,5 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in watchcat.gemspec
+gem "fiddle", platforms: %i[ mri windows ]
 gemspec
