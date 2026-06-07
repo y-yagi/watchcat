@@ -8,7 +8,10 @@ This gem uses [Notify](https://github.com/notify-rs/notify) to get notifications
 
 ## Platforms
 
-This gem supports Linux, macOS and Windows.
+- Linux: inotify
+- macOS: FSEvents
+- Windows: ReadDirectoryChangesW
+- All platforms: polling (via `force_polling` option)
 
 ## Installation
 
