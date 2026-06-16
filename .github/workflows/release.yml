@@ -19,7 +19,7 @@ jobs:
         ruby-version: "3.3"
 
     - name: Configure trusted publishing credentials
-      uses: rubygems/configure-rubygems-credentials@762a4b77c3300434bb57c7ce80b20e36231927aa # v2.0.0
+      uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
 
     - name: Release source gem
       run: |
@@ -66,7 +66,7 @@ jobs:
       shell: bash
 
     - name: Configure trusted publishing credentials
-      uses: rubygems/configure-rubygems-credentials@762a4b77c3300434bb57c7ce80b20e36231927aa # v2.0.0
+      uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
 
     - name: Release gem
       run: gem push ${{ steps.cross-gem.outputs.gem-path }}
