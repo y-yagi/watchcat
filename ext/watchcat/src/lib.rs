@@ -27,6 +27,15 @@ enum WatcherEnum {
     Recommended(RecommendedWatcher),
 }
 
+// Carries a failure out of the GVL-released section without touching Ruby.
+// `magnus::Error` (and the `Ruby` handle needed to build one) must only be
+// used while the GVL is held, so the actual `magnus::Error` is constructed
+// after control returns from `call_without_gvl`.
+enum WatchFailure {
+    Arg(String),
+    Runtime(String),
+}
+
 impl WatchcatWatcher {
     fn new() -> Self {
         let (tx_executor, rx_executor) = unbounded::<bool>();
@@ -78,7 +87,12 @@ impl WatchcatWatcher {
         rx: crossbeam_channel::Receiver<bool>,
         ruby: &Ruby
     ) -> Result<bool, Error> {
-        call_without_gvl(move || {
+        // `ruby` (and any `magnus::Error`/`ExceptionClass` built from it) must only be
+        // touched while the GVL is held, so it is intentionally NOT captured by the
+        // `call_without_gvl` closure below. Failures are carried out as plain
+        // `WatchFailure` values and converted to a real `magnus::Error` afterwards,
+        // once control has returned here with the GVL held again.
+        let result: Result<bool, WatchFailure> = call_without_gvl(move || {
             let (tx, watcher_rx) = unbounded();
             // This variable is needed to keep `watcher` active.
             let _watcher = match force_polling {
@@ -86,23 +100,23 @@ impl WatchcatWatcher {
                     let delay = Duration::from_millis(poll_interval);
                     let config = notify::Config::default().with_poll_interval(delay);
                     let mut watcher = PollWatcher::new(tx, config)
-                        .map_err(|e| Error::new(ruby.exception_arg_error(), e.to_string()))?;
+                        .map_err(|e| WatchFailure::Arg(e.to_string()))?;
                     for pathname in &pathnames {
                         let path = Path::new(pathname);
                         watcher
                             .watch(path, mode)
-                            .map_err(|e| Error::new(ruby.exception_arg_error(), e.to_string()))?;
+                            .map_err(|e| WatchFailure::Arg(e.to_string()))?;
                     }
                     WatcherEnum::Poll(watcher)
                 }
                 false => {
                     let mut watcher = RecommendedWatcher::new(tx, Config::default())
-                        .map_err(|e| Error::new(ruby.exception_arg_error(), e.to_string()))?;
+                        .map_err(|e| WatchFailure::Arg(e.to_string()))?;
                     for pathname in &pathnames {
                         let path = Path::new(pathname);
                         watcher
                             .watch(path, mode)
-                            .map_err(|e| Error::new(ruby.exception_arg_error(), e.to_string()))?;
+                            .map_err(|e| WatchFailure::Arg(e.to_string()))?;
                     }
                     WatcherEnum::Recommended(watcher)
                 }
@@ -142,28 +156,33 @@ impl WatchcatWatcher {
                                         }
 
                                         // Yield to Ruby with GVL
-                                        let result = call_with_gvl(|_| {
+                                        let result = call_with_gvl(|ruby| {
                                             ruby.yield_value::<(Vec<String>, Vec<String>, String), Value>(
                                                 (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
                                             )
                                         });
 
                                         if result.is_err() {
-                                            break Err(Error::new(ruby.exception_runtime_error(), "Error yielding to Ruby block"));
+                                            break Err(WatchFailure::Runtime("Error yielding to Ruby block".to_string()));
                                         }
                                     }
                                     Err(e) => {
-                                        break Err(Error::new(ruby.exception_runtime_error(), e.to_string()));
+                                        break Err(WatchFailure::Runtime(e.to_string()));
                                     }
                                 }
                             }
                             Err(e) => {
-                                break Err(Error::new(ruby.exception_runtime_error(), e.to_string()));
+                                break Err(WatchFailure::Runtime(e.to_string()));
                             }
                         }
                     }
                 }
             }
+        });
+
+        result.map_err(|err| match err {
+            WatchFailure::Arg(msg) => Error::new(ruby.exception_arg_error(), msg),
+            WatchFailure::Runtime(msg) => Error::new(ruby.exception_runtime_error(), msg),
         })
     }
 
