@@ -7,7 +7,7 @@ use rb_sys::{
 
 pub fn call_without_gvl<F, R>(f: F) -> R
 where
-    F: FnOnce() -> R,
+    F: Send + FnOnce() -> R,
 {
     extern "C" fn trampoline<F, R>(arg: *mut c_void) -> *mut c_void
     where
