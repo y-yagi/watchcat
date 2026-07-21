@@ -171,6 +171,40 @@ class Watchcat::KindTest < Minitest::Test
     end
   end
 
+  def test_mv_file_src_dest_path
+    file = FileUtils.touch(File.join(@tmpdir, "a.txt"))[0]
+    new_file = File.join(@tmpdir, "b.txt")
+
+    events = []
+    sleep 0.2
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    sleep 0.2
+    File.rename(file, new_file)
+    sleep 0.2
+
+    if mac_os?
+      assert_equal 3, events.count, inspect_events(events)
+      assert_nil events[1].src_path
+      assert_nil events[1].dest_path
+      assert_nil events[2].src_path
+      assert_nil events[2].dest_path
+    elsif windows?
+      assert_equal 2, events.count, inspect_events(events)
+      assert_equal file, events[0].src_path.to_s.gsub("\\", "/")
+      assert_nil events[0].dest_path
+      assert_nil events[1].src_path
+      assert_equal new_file, events[1].dest_path.to_s.gsub("\\", "/")
+    else
+      assert_equal 3, events.count, inspect_events(events)
+      assert_equal file, events[0].src_path
+      assert_nil events[0].dest_path
+      assert_nil events[1].src_path
+      assert_equal new_file, events[1].dest_path
+      assert_equal file, events[2].src_path
+      assert_equal new_file, events[2].dest_path
+    end
+  end
+
   def test_write_to_file
     file = FileUtils.touch(File.join(@tmpdir, "a.txt"))[0]
 
@@ -242,6 +276,9 @@ class Watchcat::KindTest < Minitest::Test
     unless windows?
       refute file_event.directory?, inspect_events(events)
       assert dir_event.directory?, inspect_events(events)
+
+      assert_nil file_event.src_path
+      assert_nil file_event.dest_path
     end
   end
 end

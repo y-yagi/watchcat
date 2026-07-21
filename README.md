@@ -140,6 +140,31 @@ Watchcat.watch(
 end
 ```
 
+### Move (Rename) Events
+
+For move/rename events (`e.kind.modify?` and `e.kind.modify.rename?`),
+`Watchcat::Event#src_path` and `#dest_path` give the old and new path without
+having to interpret the raw `paths` array and `RenameMode` yourself:
+
+```ruby
+Watchcat.watch("/tmp/test") do |e|
+  if e.kind.modify? && e.kind.modify.rename?
+    puts "moved: #{e.src_path} -> #{e.dest_path}"
+  end
+end
+```
+
+Platform differences affect what is available:
+
+- **Linux**: a `both` event fires with both paths, so `src_path` and
+  `dest_path` are both set.
+- **Windows**: `from` and `to` fire as separate events, each with only one
+  side set (`src_path` on `from`, `dest_path` on `to`).
+- **macOS**: FSEvents can't distinguish old/new paths, so both `src_path` and
+  `dest_path` are `nil`.
+
+For non-rename events, both accessors return `nil`.
+
 
 ## CLI
 
