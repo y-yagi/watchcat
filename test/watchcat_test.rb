@@ -386,4 +386,55 @@ class WatchcatTest < Minitest::Test
     end
     refute_empty target_events, "No events detected for target file modification"
   end
+
+  def test_watch_with_patterns
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, patterns: ["*.txt"]) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.3
+    FileUtils.touch(File.join(@tmpdir, "b.rb"))
+    sleep 0.3
+
+    refute_equal 0, events.count, inspect_events(events)
+
+    events.each do |event|
+      event.paths.each { |path| assert_equal ".txt", File.extname(path), inspect_events(events) }
+    end
+  end
+
+  def test_watch_with_ignore_patterns
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, ignore_patterns: ["*.log"]) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.3
+    FileUtils.touch(File.join(@tmpdir, "b.log"))
+    sleep 0.3
+
+    refute_equal 0, events.count, inspect_events(events)
+
+    events.each do |event|
+      event.paths.each { |path| refute_equal ".log", File.extname(path), inspect_events(events) }
+    end
+  end
+
+  def test_watch_with_ignore_directories
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, ignore_directories: true) { |e| events << e }
+
+    sleep 0.2
+    FileUtils.mkdir(File.join(@tmpdir, "sub_dir"))
+    sleep 0.3
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.3
+
+    refute_equal 0, events.count, inspect_events(events)
+
+    events.each do |event|
+      refute event.directory?, "Directory event was not filtered: #{event.paths}"
+    end
+  end
 end

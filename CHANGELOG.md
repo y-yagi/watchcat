@@ -1,3 +1,7 @@
+## Unreleased
+
+* Add `patterns`, `ignore_patterns`, and `ignore_directories` options to `Watchcat.watch`.
+
 ## 0.5.2
 
 * Support Ruby 4.0

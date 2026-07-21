@@ -14,6 +14,20 @@ module Watchcat
       { paths: @paths, event: @event }
     end
 
+    def directory?
+      if kind.create?
+        kind.create.folder?
+      elsif kind.remove?
+        kind.remove.folder?
+      elsif kind.any?
+        kind.any.folder?
+      else
+        File.directory?(@paths.first)
+      end
+    rescue
+      false
+    end
+
     private
 
     def build_kind(kinds)
