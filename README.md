@@ -115,6 +115,31 @@ Watchcat.watch("/tmp/test", filters: { ignore_remove: true, ignore_access: true 
 end
 ```
 
+### Pattern Options
+
+You can use the `patterns`, `ignore_patterns`, and `ignore_directories` options to filter events by path or type, using `File.fnmatch` glob patterns:
+
+| Name                  | Description                                                              | Default |
+| --------------------- | ------------------------------------------------------------------------| ------- |
+| **patterns**          | Only dispatch events where at least one path matches one of the patterns | `[]`    |
+| **ignore_patterns**   | Skip events where at least one path matches one of the patterns         | `[]`    |
+| **ignore_directories**| Skip events for directories                                             | `false` |
+
+**CAUTION** For `access`/`modify`/`rename` events, notify doesn't tell whether the path is a file or a directory, so `ignore_directories` falls back to a live `File.directory?` check on the path (best-effort; e.g. it can't tell for a path that no longer exists).
+
+Example usage:
+
+```ruby
+Watchcat.watch(
+  "/tmp/test",
+  patterns: ["*.rb", "*.yml"],
+  ignore_patterns: ["*.tmp"],
+  ignore_directories: true
+) do |e|
+  pp e.paths, e.kind
+end
+```
+
 
 ## CLI
 

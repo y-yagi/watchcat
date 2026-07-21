@@ -17,6 +17,9 @@ module Watchcat
       poll_interval: nil,
       filters: {},
       debounce: -1,
+      patterns: [],
+      ignore_patterns: [],
+      ignore_directories: false,
       &block
     )
       w =
@@ -27,6 +30,9 @@ module Watchcat
           poll_interval: poll_interval,
           filters: filters,
           debounce: debounce,
+          patterns: patterns,
+          ignore_patterns: ignore_patterns,
+          ignore_directories: ignore_directories,
           block: block
         )
       w.start

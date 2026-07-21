@@ -227,4 +227,21 @@ class Watchcat::KindTest < Minitest::Test
     assert event.kind.modify.metadata?
     assert event.kind.modify.ownership? unless RUBY_PLATFORM.match?("linux")
   end
+
+  def test_directory_predicate_for_create_events
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    Dir.mkdir(File.join(@tmpdir, "dir"))
+    sleep 0.2
+
+    file_event = events.find { |e| e.kind.create? && e.kind.create.file? }
+    dir_event = events.find { |e| e.kind.create? && e.kind.create.folder? }
+
+    unless windows?
+      refute file_event.directory?, inspect_events(events)
+      assert dir_event.directory?, inspect_events(events)
+    end
+  end
 end

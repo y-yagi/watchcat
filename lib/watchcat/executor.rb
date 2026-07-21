@@ -2,7 +2,7 @@ require_relative "event"
 
 module Watchcat
   class Executor
-    def initialize(paths, recursive:, force_polling:, poll_interval:, filters:, debounce:, block:)
+    def initialize(paths, recursive:, force_polling:, poll_interval:, filters:, debounce:, block:, patterns: [], ignore_patterns: [], ignore_directories: false)
       @paths = paths
       @recursive = recursive
       @force_polling = force_polling
@@ -10,6 +10,9 @@ module Watchcat
       @filters = filters || {}
       @debounce = debounce
       @debouncer = Debouncer.new if @debounce > 0
+      @patterns = Array(patterns)
+      @ignore_patterns = Array(ignore_patterns)
+      @ignore_directories = ignore_directories
       @block = block
       @watcher = Watchcat::Watcher.new
       @watch_thread = nil
@@ -51,15 +54,28 @@ module Watchcat
       ) do |kind, paths, raw_kind|
         break if @stop_requested
 
+        event = Watchcat::Event.new(kind, paths, raw_kind)
+        next unless dispatch?(event)
+
         if @debounce > 0 && paths.size == 1
-          @debouncer.debounce(paths[0], @debounce) do
-            event = Watchcat::Event.new(kind, paths, raw_kind)
-            @block.call(event)
-          end
+          @debouncer.debounce(paths[0], @debounce) { @block.call(event) }
         else
-          event = Watchcat::Event.new(kind, paths, raw_kind)
           @block.call(event)
         end
+      end
+    end
+
+    def dispatch?(event)
+      return false if @ignore_directories && event.directory?
+      return false if @patterns.any? && !matches_any_pattern?(event.paths, @patterns)
+      return false if @ignore_patterns.any? && matches_any_pattern?(event.paths, @ignore_patterns)
+
+      true
+    end
+
+    def matches_any_pattern?(paths, patterns)
+      paths.any? do |path|
+        patterns.any? { |pattern| File.fnmatch?(pattern, File.basename(path)) || File.fnmatch?(pattern, path) }
       end
     end
   end
