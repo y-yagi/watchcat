@@ -197,6 +197,30 @@ Pass an instance via the `handler:` keyword instead of a block. `Watchcat::Event
 | `on_rename`     | Called for rename/move events (`src_path`/`dest_path` available) |
 | `on_access`     | Called for access events                               |
 
+### Dynamically Adding / Removing Paths
+
+The watcher returned by `Watchcat.watch` can have paths added or removed while
+it's running:
+
+```ruby
+w = Watchcat.watch("/tmp/a") { |e| pp e.paths, e.kind }
+
+w.watch("/tmp/b")                    # also watch /tmp/b
+w.watch("/tmp/c", recursive: false)  # non-recursive
+w.unwatch("/tmp/a")                  # stop watching /tmp/a
+w.watched                            # => current watched paths
+
+sleep
+```
+
+All watched paths share the single callback/handler passed to `Watchcat.watch`
+(and the same `filters`/`patterns`/`debounce` settings). `recursive:` on `watch`
+defaults to the value passed to `Watchcat.watch`. `watch` raises `ArgumentError`
+immediately if a path does not exist. Applying `unwatch` is asynchronous, so
+its exact timing (and behavior) can differ per platform, notably on macOS
+(FSEvents). Both `watch` and `unwatch` accept a single path or an array of
+paths.
+
 ## CLI
 
 `watchcat` comes with a command-line interface that allows you to watch files and execute commands when changes occur.
