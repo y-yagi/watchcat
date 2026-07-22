@@ -165,6 +165,37 @@ Platform differences affect what is available:
 
 For non-rename events, both accessors return `nil`.
 
+### Event Handler
+
+Instead of writing a single block and branching on `event.kind` yourself, you
+can subclass `Watchcat::EventHandler` and override just the callbacks you
+need:
+
+```ruby
+class MyHandler < Watchcat::EventHandler
+  def on_create(event)
+    puts "created: #{event.paths[0]}"
+  end
+
+  def on_rename(event)
+    puts "moved: #{event.src_path} -> #{event.dest_path}"
+  end
+end
+
+Watchcat.watch("/tmp/test", handler: MyHandler.new)
+sleep
+```
+
+Pass an instance via the `handler:` keyword instead of a block. `Watchcat::EventHandler` provides the following no-op callbacks to override:
+
+| Callback        | Description                                          |
+| --------------- | ----------------------------------------------------- |
+| `on_any_event`  | Called for every event, before the type-specific callback |
+| `on_create`     | Called for create events                              |
+| `on_modify`     | Called for modify events (excluding renames)          |
+| `on_remove`     | Called for remove events                              |
+| `on_rename`     | Called for rename/move events (`src_path`/`dest_path` available) |
+| `on_access`     | Called for access events                               |
 
 ## CLI
 

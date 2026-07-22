@@ -1,5 +1,6 @@
 ## Unreleased
 
+* Add `Watchcat::EventHandler` for handling events with callback methods.
 * Add `Watchcat::Event#src_path` and `Watchcat::Event#dest_path` for move/rename events.
 * Add `patterns`, `ignore_patterns`, and `ignore_directories` options to `Watchcat.watch`.
 

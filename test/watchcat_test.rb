@@ -15,6 +15,10 @@ class WatchcatTest < Minitest::Test
     FileUtils.remove_entry_secure(@tmpdir)
   end
 
+  def test_watch_without_block_or_handler_raises_argument_error
+    assert_raises(ArgumentError) { Watchcat.watch(@tmpdir) }
+  end
+
   def test_watch_directory_without_recursive
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
