@@ -17,14 +17,28 @@ struct WatchcatWatcher {
     tx: crossbeam_channel::Sender<bool>,
     rx: crossbeam_channel::Receiver<bool>,
     terminated: Arc<AtomicBool>,
+    cmd_tx: crossbeam_channel::Sender<Command>,
+    cmd_rx: crossbeam_channel::Receiver<Command>,
 }
 
 #[derive(Debug)]
 enum WatcherEnum {
-    #[allow(dead_code)]
     Poll(PollWatcher),
-    #[allow(dead_code)]
     Recommended(RecommendedWatcher),
+}
+
+fn watcher_watch(w: &mut WatcherEnum, path: &Path, mode: RecursiveMode) -> notify::Result<()> {
+    match w {
+        WatcherEnum::Poll(x) => x.watch(path, mode),
+        WatcherEnum::Recommended(x) => x.watch(path, mode),
+    }
+}
+
+fn watcher_unwatch(w: &mut WatcherEnum, path: &Path) -> notify::Result<()> {
+    match w {
+        WatcherEnum::Poll(x) => x.unwatch(path),
+        WatcherEnum::Recommended(x) => x.unwatch(path),
+    }
 }
 
 // Carries a failure out of the GVL-released section without touching Ruby.
@@ -36,13 +50,21 @@ enum WatchFailure {
     Runtime(String),
 }
 
+enum Command {
+    Watch(Vec<String>, bool),   // paths, recursive
+    Unwatch(Vec<String>),       // paths
+}
+
 impl WatchcatWatcher {
     fn new() -> Self {
         let (tx_executor, rx_executor) = unbounded::<bool>();
+        let (cmd_tx, cmd_rx) = unbounded::<Command>();
         Self {
             tx: tx_executor,
             rx: rx_executor,
             terminated: Arc::new(AtomicBool::new(false)),
+            cmd_tx,
+            cmd_rx,
         }
     }
 
@@ -67,9 +89,10 @@ impl WatchcatWatcher {
 
         let terminated = self.terminated.clone();
         let rx_clone = self.rx.clone();
+        let cmd_rx = self.cmd_rx.clone();
 
         Self::watch_threaded(
-            pathnames, mode, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, terminated, rx_clone, ruby_ref
+            pathnames, mode, force_polling, poll_interval, ignore_remove, ignore_access, ignore_create, ignore_modify, terminated, rx_clone, cmd_rx, ruby_ref
         )
     }
 
@@ -85,6 +108,7 @@ impl WatchcatWatcher {
         ignore_modify: bool,
         terminated: Arc<AtomicBool>,
         rx: crossbeam_channel::Receiver<bool>,
+        cmd_rx: crossbeam_channel::Receiver<Command>,
         ruby: &Ruby
     ) -> Result<bool, Error> {
         // `ruby` (and any `magnus::Error`/`ExceptionClass` built from it) must only be
@@ -95,7 +119,7 @@ impl WatchcatWatcher {
         let result: Result<bool, WatchFailure> = call_without_gvl(move || {
             let (tx, watcher_rx) = unbounded();
             // This variable is needed to keep `watcher` active.
-            let _watcher = match force_polling {
+            let mut _watcher = match force_polling {
                 true => {
                     let delay = Duration::from_millis(poll_interval);
                     let config = notify::Config::default().with_poll_interval(delay);
@@ -130,6 +154,23 @@ impl WatchcatWatcher {
                 select! {
                     recv(rx) -> _res => {
                         break Ok(true);
+                    }
+                    recv(cmd_rx) -> cmd => {
+                        if let Ok(cmd) = cmd {
+                            match cmd {
+                                Command::Watch(paths, recursive) => {
+                                    let m = if recursive { RecursiveMode::Recursive } else { RecursiveMode::NonRecursive };
+                                    for p in &paths {
+                                        let _ = watcher_watch(&mut _watcher, Path::new(p), m);
+                                    }
+                                }
+                                Command::Unwatch(paths) => {
+                                    for p in &paths {
+                                        let _ = watcher_unwatch(&mut _watcher, Path::new(p));
+                                    }
+                                }
+                            }
+                        }
                     }
                     recv(watcher_rx) -> res => {
                         match res {
@@ -219,6 +260,59 @@ impl WatchcatWatcher {
             ignore_modify.flatten().unwrap_or(false),
         ))
     }
+
+    fn add(&self, args: &[Value]) -> Result<bool, Error> {
+        let (paths, recursive) = Self::parse_add_args(args)?;
+        // `send` only fails when every receiver is disconnected, but `self`
+        // holds `cmd_rx` for the whole lifetime of this object, so it cannot
+        // fail here. If the watch loop has already stopped, the command is
+        // simply buffered and never applied (a harmless no-op).
+        let _ = self.cmd_tx.send(Command::Watch(paths, recursive));
+        Ok(true)
+    }
+
+    fn unwatch(&self, args: &[Value]) -> Result<bool, Error> {
+        let paths = Self::parse_unwatch_args(args)?;
+        // See `add`: `send` cannot fail while `self` retains `cmd_rx`.
+        let _ = self.cmd_tx.send(Command::Unwatch(paths));
+        Ok(true)
+    }
+
+    #[allow(clippy::let_unit_value)]
+    fn parse_add_args(args: &[Value]) -> Result<(Vec<String>, bool), Error> {
+        type KwArgBool = Option<Option<bool>>;
+
+        let args = scan_args(args)?;
+        let (paths,): (Vec<String>,) = args.required;
+        let _: () = args.optional;
+        let _: () = args.splat;
+        let _: () = args.trailing;
+        let _: () = args.block;
+
+        let kwargs = get_kwargs(args.keywords, &[], &["recursive"])?;
+        let (recursive,): (KwArgBool,) = kwargs.optional;
+        let _: () = kwargs.required;
+        let _: () = kwargs.splat;
+
+        Ok((paths, recursive.flatten().unwrap_or(true)))
+    }
+
+    #[allow(clippy::let_unit_value)]
+    fn parse_unwatch_args(args: &[Value]) -> Result<Vec<String>, Error> {
+        let args = scan_args(args)?;
+        let (paths,): (Vec<String>,) = args.required;
+        let _: () = args.optional;
+        let _: () = args.splat;
+        let _: () = args.trailing;
+        let _: () = args.block;
+
+        let kwargs = get_kwargs::<&str, (), (), ()>(args.keywords, &[], &[])?;
+        let _: () = kwargs.optional;
+        let _: () = kwargs.required;
+        let _: () = kwargs.splat;
+
+        Ok(paths)
+    }
 }
 
 #[magnus::init]
@@ -229,6 +323,8 @@ fn init(ruby: &Ruby) -> Result<(), Error> {
     watcher_class.define_singleton_method("new", function!(WatchcatWatcher::new, 0))?;
     watcher_class.define_method("watch", method!(WatchcatWatcher::watch, -1))?;
     watcher_class.define_method("close", method!(WatchcatWatcher::close, 0))?;
+    watcher_class.define_method("add", method!(WatchcatWatcher::add, -1))?;
+    watcher_class.define_method("unwatch", method!(WatchcatWatcher::unwatch, -1))?;
 
     Ok(())
 }
