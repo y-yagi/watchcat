@@ -28,7 +28,30 @@ module Watchcat
       false
     end
 
+    def src_path
+      return nil unless rename_event?
+
+      rename = kind.modify.rename
+      return @paths[0] if rename.both? || rename.from?
+
+      nil
+    end
+
+    def dest_path
+      return nil unless rename_event?
+
+      rename = kind.modify.rename
+      return @paths[1] if rename.both?
+      return @paths[0] if rename.to?
+
+      nil
+    end
+
     private
+
+    def rename_event?
+      kind.modify? && kind.modify.rename?
+    end
 
     def build_kind(kinds)
       @kind = Watchcat::EventKind.new
