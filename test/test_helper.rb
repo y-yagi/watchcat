@@ -5,7 +5,8 @@ require "watchcat"
 require "debug"
 
 if ENV["CI"]
-  require 'minitest/retry'
+  require "minitest"
+  require "minitest/retry"
   Minitest::Retry.use!
 else
   require "minitest/fail_fast"
