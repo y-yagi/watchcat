@@ -39,6 +39,25 @@ module Watchcat
       end
     end
 
+    def watch(paths, recursive: @recursive)
+      paths = Array(paths)
+      paths.each { |p| raise ArgumentError, "path does not exist: #{p}" unless File.exist?(p) }
+      @watcher.add(paths, recursive: recursive)
+      @paths |= paths
+      self
+    end
+
+    def unwatch(paths)
+      paths = Array(paths)
+      @watcher.unwatch(paths)
+      @paths -= paths
+      self
+    end
+
+    def watched
+      @paths.dup
+    end
+
     private
 
     def start_watching
