@@ -3,6 +3,7 @@
 require "test_helper"
 require "tmpdir"
 require "fileutils"
+require "timeout"
 
 class WatchcatTest < Minitest::Test
   def setup
@@ -440,5 +441,66 @@ class WatchcatTest < Minitest::Test
     events.each do |event|
       refute event.directory?, "Directory event was not filtered: #{event.paths}"
     end
+  end
+
+  def test_a_forked_child_exiting_does_not_stop_the_parents_watcher
+    skip if windows? #
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
+    sleep 0.2
+
+    # The child starts no watcher of its own but inherits the at_exit hook. The
+    # timeout is what turns a regression into a failure rather than a hang.
+    pid = fork { exit 0 }
+    status = nil
+    begin
+      Timeout.timeout(5) { _, status = Process.wait2(pid) }
+    rescue Timeout::Error
+      flunk "forked child did not exit within 5 seconds"
+    end
+    assert status.exited?, "child did not exit normally: #{status.inspect}"
+    assert_equal 0, status.exitstatus
+
+    events.clear
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.3
+
+    refute_equal 0, events.count, inspect_events(events)
+  end
+
+  def test_stop_is_idempotent
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |_e| }
+    sleep 0.2
+
+    @watchcat.stop
+    @watchcat.stop
+  end
+
+  def test_stop_in_a_forked_child_leaves_the_watcher_usable
+    skip if windows?
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
+    sleep 0.2
+
+    pid = fork do
+      @watchcat.stop
+      exit 0
+    end
+    status = nil
+    begin
+      Timeout.timeout(5) { _, status = Process.wait2(pid) }
+    rescue Timeout::Error
+      flunk "forked child did not exit within 5 seconds"
+    end
+    assert status.exited?, "child did not exit normally: #{status.inspect}"
+    assert_equal 0, status.exitstatus
+
+    events.clear
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.3
+
+    refute_equal 0, events.count, inspect_events(events)
   end
 end

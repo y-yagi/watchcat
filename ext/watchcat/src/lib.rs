@@ -70,7 +70,12 @@ impl WatchcatWatcher {
 
     fn close(&self) {
         self.terminated.store(true, Ordering::SeqCst);
-        self.tx.send(true).unwrap()
+        // See `add`/`unwatch`: `send` cannot fail while `self` retains `rx`,
+        // but `.unwrap()` would still turn a hypothetical failure into a
+        // Rust panic, and a panic crossing the FFI boundary aborts the whole
+        // process instead of raising in Ruby. Not worth the risk for a
+        // result we already know.
+        let _ = self.tx.send(true);
     }
 
     fn watch(&self, args: &[Value]) -> Result<bool, Error> {
@@ -197,14 +202,14 @@ impl WatchcatWatcher {
                                         }
 
                                         // Yield to Ruby with GVL
-                                        let result = call_with_gvl(|ruby| {
+                                        let result: Result<Value, String> = call_with_gvl(|ruby| {
                                             ruby.yield_value::<(Vec<String>, Vec<String>, String), Value>(
                                                 (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
-                                            )
+                                            ).map_err(|e| e.to_string())
                                         });
 
-                                        if result.is_err() {
-                                            break Err(WatchFailure::Runtime("Error yielding to Ruby block".to_string()));
+                                        if let Err(msg) = result {
+                                            break Err(WatchFailure::Runtime(format!("Error yielding to Ruby block: {msg}")));
                                         }
                                     }
                                     Err(e) => {
