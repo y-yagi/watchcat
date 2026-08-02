@@ -444,7 +444,11 @@ class WatchcatTest < Minitest::Test
   end
 
   def test_a_forked_child_exiting_does_not_stop_the_parents_watcher
-    skip if windows? #
+    # fork(2) without a following exec() is only async-signal-safe. On macOS the
+    # watcher relies on FSEvents/CoreFoundation, which are not fork-safe, so the
+    # child can crash (e.g. SIGTRAP from libdispatch) for reasons unrelated to
+    # `Watchcat::Executor`. Linux's inotify backend has no such restriction.
+    skip if windows? || mac_os?
 
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |e| events << e }
@@ -486,7 +490,13 @@ class WatchcatTest < Minitest::Test
 
     pid = fork do
       @watchcat.stop
-      exit 0
+      # exit (rather than exit!) would also run the at_exit-registered `stop`
+      # and the rest of Ruby's normal VM shutdown (GC, finalizers, ...). On
+      # macOS the watcher uses FSEvents/CoreFoundation, which -- like the rest
+      # of libdispatch -- is only safe to use in a fork(2) child up until the
+      # next exec(3); touching it afterwards can abort the process. exit!
+      # skips that shutdown machinery and calls _exit(2) directly.
+      Process.exit!(true)
     end
     status = nil
     begin
