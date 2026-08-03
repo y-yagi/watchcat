@@ -1,5 +1,7 @@
 ## Unreleased
 
+* Add `#alive?` to the watcher returned by `Watchcat.watch` for checking whether the background watcher thread is still running.
+
 ## 0.6.0
 
 * Add `#watch`, `#unwatch`, and `#watched` to the watcher returned by `Watchcat.watch` for dynamically managing watched paths.
