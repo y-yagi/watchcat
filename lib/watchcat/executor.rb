@@ -17,9 +17,13 @@ module Watchcat
       @watcher = Watchcat::Watcher.new
       @watch_thread = nil
       @stop_requested = false
+      @owner_pid = nil
+      @stopped = false
     end
 
     def start
+      @owner_pid = Process.pid
+
       # Always start watching in a background thread to avoid blocking
       @watch_thread = Thread.new do
         Thread.current.name = "watchcat-watcher"
@@ -32,6 +36,15 @@ module Watchcat
     end
 
     def stop
+      # A forked child inherits the at_exit hook without inheriting the watcher
+      # thread, so it would call #close -- which sends on a channel, and a send
+      # can allocate. If the watcher thread held the allocator lock at fork
+      # time, that lock is never released in the child.
+      return if @owner_pid != Process.pid
+
+      return if @stopped
+      @stopped = true
+
       @stop_requested = true
       @watcher.close
       if @watch_thread && @watch_thread.alive?
@@ -71,7 +84,7 @@ module Watchcat
         ignore_create: @filters[:ignore_create],
         ignore_modify: @filters[:ignore_modify]
       ) do |kind, paths, raw_kind|
-        break if @stop_requested
+        next if @stop_requested
 
         event = Watchcat::Event.new(kind, paths, raw_kind)
         next unless dispatch?(event)
