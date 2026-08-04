@@ -473,6 +473,17 @@ class WatchcatTest < Minitest::Test
     refute_equal 0, events.count, inspect_events(events)
   end
 
+  def test_alive_reflects_watch_thread_state
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |_e| }
+    sleep 0.2
+
+    assert @watchcat.alive?
+
+    @watchcat.stop
+
+    refute @watchcat.alive?
+  end
+
   def test_stop_is_idempotent
     @watchcat = Watchcat.watch(@tmpdir, recursive: true) { |_e| }
     sleep 0.2

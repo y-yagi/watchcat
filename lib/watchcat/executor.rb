@@ -71,6 +71,12 @@ module Watchcat
       @paths.dup
     end
 
+    # Whether the background watcher thread is still running. `false` before
+    # `#start` is called, after `#stop`, or if the thread died unexpectedly.
+    def alive?
+      !@watch_thread.nil? && @watch_thread.alive?
+    end
+
     private
 
     def start_watching
