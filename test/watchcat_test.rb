@@ -199,10 +199,19 @@ class WatchcatTest < Minitest::Test
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
     sleep 0.2
+    before_read = events.count
+
     File.open(File.join(@tmpdir, "a.txt"), "r") { |f| f.read }
     sleep 0.2
+
+    assert_equal before_read, events.count,
+                 "a read produced an event even with ignore_access: #{inspect_events(events)}"
+
     FileUtils.touch(File.join(@tmpdir, "b.txt"))
     sleep 0.2
+
+    refute_equal before_read, events.count,
+                 "the watcher stopped reporting events entirely, not just filtering reads"
 
     # No access events should be present
     events.each do |event|

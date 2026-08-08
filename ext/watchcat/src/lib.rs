@@ -191,7 +191,22 @@ impl WatchcatWatcher {
                                         if ignore_remove && matches!(event.kind, notify::event::EventKind::Remove(_)) {
                                             continue;
                                         }
-                                        if ignore_access && matches!(event.kind, notify::event::EventKind::Access(_)) {
+
+                                        let macos_ambiguous_metadata_touch = cfg!(target_os = "macos")
+                                            && matches!(
+                                                event.kind,
+                                                notify::event::EventKind::Modify(
+                                                    notify::event::ModifyKind::Metadata(
+                                                        notify::event::MetadataKind::Any
+                                                    )
+                                                )
+                                            );
+                                        if ignore_access
+                                            && (matches!(
+                                                event.kind,
+                                                notify::event::EventKind::Access(_)
+                                            ) || macos_ambiguous_metadata_touch)
+                                        {
                                             continue;
                                         }
                                         if ignore_create && matches!(event.kind, notify::event::EventKind::Create(_)) {
