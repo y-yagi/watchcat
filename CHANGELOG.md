@@ -1,6 +1,7 @@
 ## Unreleased
 
 * Add `#alive?` to the watcher returned by `Watchcat.watch` for checking whether the background watcher thread is still running.
+* Fix `ignore_access` being a no-op on macOS: FSEvents has no `Access` event kind, so a plain read was surfacing as an unclassified `Modify(Metadata)` event instead and passing the filter unfiltered.
 
 ## 0.6.0
 
