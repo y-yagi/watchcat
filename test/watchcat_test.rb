@@ -219,6 +219,36 @@ class WatchcatTest < Minitest::Test
     end
   end
 
+  def test_watch_with_ignore_access_on_a_preexisting_file_in_a_subdirectory
+    watched = File.join(@tmpdir, "parent", "child")
+    FileUtils.mkdir_p(watched)
+    target = File.join(watched, "existing.rb")
+    File.write(target, "X = 1\n")
+
+    events = []
+    @watchcat = Watchcat.watch(
+      watched,
+      recursive: true,
+      filters: {ignore_access: true}
+    ) { |e| events << e }
+
+    sleep 0.3
+    before_read = events.count
+
+    File.read(target)
+    Dir.children(watched)
+    sleep 0.5
+
+    assert_equal before_read, events.count,
+                 "a read/listing produced an event even with ignore_access: #{inspect_events(events)}"
+
+    FileUtils.touch(File.join(watched, "new_file.rb"))
+    sleep 0.3
+
+    refute_equal before_read, events.count,
+                 "the watcher stopped reporting events entirely, not just filtering reads"
+  end
+
   def test_watch_with_ignore_create
     events = []
     @watchcat = Watchcat.watch(
