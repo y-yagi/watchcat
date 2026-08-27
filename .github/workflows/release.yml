@@ -2,8 +2,33 @@ name: release
 on: workflow_dispatch
 
 jobs:
+  tag:
+    name: Create release tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+      with:
+        ruby-version: "3.3"
+        bundler-cache: true
+
+    - name: Configure git identity
+      run: |
+        git config --global user.email "$(git log -1 --pretty=format:'%ae')"
+        git config --global user.name "$(git log -1 --pretty=format:'%an')"
+
+    - name: Create and push tag
+      run: bundle exec rake release:source_control_push
+
   release-source:
     name: Build source gem
+    needs: tag
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -28,6 +53,7 @@ jobs:
 
   release:
     name: Build native gems
+    needs: tag
     runs-on: ubuntu-latest
     timeout-minutes: 5
     strategy:
