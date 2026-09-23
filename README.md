@@ -9,9 +9,27 @@ This gem uses [Notify](https://github.com/notify-rs/notify) to get notifications
 ## Platforms
 
 - Linux: inotify
-- macOS: FSEvents
+- macOS: FSEvents (default), kqueue (see below)
 - Windows: ReadDirectoryChangesW
 - All platforms: polling (via `force_polling` option)
+
+### Using kqueue on macOS
+
+On macOS, FSEvents is used by default. To use kqueue instead, build the gem from source with the `--with-backend=kqueue` option. Precompiled gems always use FSEvents.
+
+```
+$ gem install watchcat --platform ruby -- --with-backend=kqueue
+```
+
+With Bundler, add `force_ruby_platform: true` to the `watchcat` entry in your Gemfile, and set the build option:
+
+```ruby
+gem "watchcat", force_ruby_platform: true
+```
+
+```
+$ bundle config build.watchcat --with-backend=kqueue
+```
 
 ## Installation
 

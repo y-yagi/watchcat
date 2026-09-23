@@ -1,5 +1,7 @@
 ## Unreleased
 
+* Add a `kqueue` backend option for macOS builds from source (`WATCHCAT_BACKEND=kqueue` or `--with-backend=kqueue`), as an alternative to the default FSEvents backend. Precompiled gems still always use FSEvents.
+
 ## 0.6.1
 
 * Add `#alive?` to the watcher returned by `Watchcat.watch` for checking whether the background watcher thread is still running.

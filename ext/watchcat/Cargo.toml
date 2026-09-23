@@ -7,8 +7,13 @@ publish = false
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+default = ["macos_fsevent"]
+macos_fsevent = ["notify/macos_fsevent"]
+macos_kqueue = ["notify/macos_kqueue"]
+
 [dependencies]
 crossbeam-channel = "0.5.15"
 magnus = "0.8"
-notify = { version = "8.2.0", features = ["crossbeam-channel"] }
+notify = { version = "8.2.0", default-features = false, features = ["crossbeam-channel"] }
 rb-sys = "0.9.128"

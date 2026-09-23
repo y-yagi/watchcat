@@ -41,6 +41,29 @@ jobs:
     - name: Run test
       run: bundle exec rake
 
+  macos-kqueue:
+    runs-on: macos-latest
+    name: Test (kqueue backend)
+    timeout-minutes: 5
+    env:
+      OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+      WATCHCAT_BACKEND: kqueue
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Set up Ruby & Rust
+      uses: oxidize-rb/actions/setup-ruby-and-rust@08e22a43e1771991320b75fe2dfb29d8e3f46668
+      with:
+        ruby-version: '3.4'
+        bundler-cache: true
+        cargo-cache: false
+        bundler: "latest"
+        rubygems: "latest"
+
+    - name: Run test
+      run: bundle exec rake
+
   clippy:
     runs-on: ubuntu-latest
     name: Clippy

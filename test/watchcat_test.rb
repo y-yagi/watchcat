@@ -16,11 +16,25 @@ class WatchcatTest < Minitest::Test
     FileUtils.remove_entry_secure(@tmpdir)
   end
 
+  def test_backend
+    if mac_os?
+      assert_includes %w[fsevent kqueue], Watchcat.backend
+    elsif windows?
+      assert_equal "ReadDirectoryChanges", Watchcat.backend
+    else
+      assert_equal "inotify", Watchcat.backend
+    end
+  end
+
   def test_watch_without_block_or_handler_raises_argument_error
     assert_raises(ArgumentError) { Watchcat.watch(@tmpdir) }
   end
 
   def test_watch_directory_without_recursive
+    # notify's kqueue backend watches directories created after the watch
+    # started recursively, even with `recursive: false`.
+    skip if kqueue?
+
     events = []
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
 
@@ -348,7 +362,9 @@ class WatchcatTest < Minitest::Test
   end
 
   def test_watch_broken_symlink
-    skip if windows?
+    # kqueue opens every entry while setting up a recursive watch, and a broken
+    # symlink makes that fail, so the watch itself fails.
+    skip if windows? || kqueue?
 
     # Create a symlink to a non-existent file
     broken_symlink = File.join(@tmpdir, "broken_link.txt")
