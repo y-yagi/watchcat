@@ -24,4 +24,8 @@ def windows?
   RUBY_PLATFORM.match?("mswin|mingw|cygwin")
 end
 
+def kqueue?
+  Watchcat.backend == "kqueue"
+end
+
 require "minitest/autorun"

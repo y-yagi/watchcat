@@ -24,7 +24,14 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.remove(file)
     sleep 0.2
 
-    if mac_os?
+    if kqueue?
+      # With `recursive: false`, kqueue watches only the directory itself, so
+      # the removal is only reported as a change to the directory.
+      assert_equal 1, events.count, inspect_events(events)
+      assert events[0].kind.modify?
+      assert_equal File.basename(@tmpdir), File.basename(events[0].paths[0])
+      return
+    elsif mac_os?
       assert_equal 2, events.count, inspect_events(events)
     else
       assert_equal 1, events.count, inspect_events(events)
@@ -49,7 +56,13 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.remove_dir(dir)
     sleep 0.2
 
-    if windows?
+    if kqueue?
+      # See `test_remove_file`.
+      assert_equal 1, events.count, inspect_events(events)
+      assert events[0].kind.modify?
+      assert_equal File.basename(@tmpdir), File.basename(events[0].paths[0])
+      return
+    elsif windows?
       assert_equal 1, events.count, inspect_events(events)
     else
       assert_equal 2, events.count, inspect_events(events)
@@ -138,7 +151,14 @@ class Watchcat::KindTest < Minitest::Test
     File.rename(file, new_file)
     sleep 0.2
 
-    if mac_os?
+    if kqueue?
+      # kqueue has no rename information for entries in a non-recursively
+      # watched directory; only the new name shows up, as a create.
+      assert_equal 1, events.count, inspect_events(events)
+      assert events[0].kind.create?
+      assert events[0].kind.create.file?
+      assert_equal File.basename(new_file), File.basename(events[0].paths[0])
+    elsif mac_os?
       assert_equal 3, events.count, inspect_events(events)
       assert events[0].kind.create?
       assert events[0].kind.create.file?
@@ -182,7 +202,12 @@ class Watchcat::KindTest < Minitest::Test
     File.rename(file, new_file)
     sleep 0.2
 
-    if mac_os?
+    if kqueue?
+      # See `test_mv_file`.
+      assert_equal 1, events.count, inspect_events(events)
+      assert_nil events[0].src_path
+      assert_nil events[0].dest_path
+    elsif mac_os?
       assert_equal 3, events.count, inspect_events(events)
       assert_nil events[1].src_path
       assert_nil events[1].dest_path
@@ -215,7 +240,11 @@ class Watchcat::KindTest < Minitest::Test
     system("echo 'a' >> #{file}", exception: true)
     sleep 0.2
 
-    if mac_os?
+    if kqueue?
+      # With `recursive: false`, kqueue watches only the directory itself, not
+      # the files in it, so writes to an existing file aren't reported.
+      assert_empty events, inspect_events(events)
+    elsif mac_os?
       assert_equal 2, events.count, inspect_events(events)
       assert events[0].kind.create?
       assert events[0].kind.create.file?
@@ -250,7 +279,11 @@ class Watchcat::KindTest < Minitest::Test
     FileUtils.chmod(0644, file)
     sleep 0.2
 
-    if mac_os?
+    if kqueue?
+      # See `test_write_to_file`.
+      assert_empty events, inspect_events(events)
+      return
+    elsif mac_os?
       assert_equal 2, events.count, inspect_events(events)
     else
       assert_equal 1, events.count, inspect_events(events)
@@ -267,6 +300,9 @@ class Watchcat::KindTest < Minitest::Test
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
     sleep 0.2
     FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    # kqueue coalesces back-to-back changes to the same directory into one
+    # event, and notify reports only one new entry per event.
+    sleep 0.2 if kqueue?
     Dir.mkdir(File.join(@tmpdir, "dir"))
     sleep 0.2
 

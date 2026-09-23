@@ -4,13 +4,25 @@ use magnus::{
     scan_args::{get_kwargs, scan_args},
     Error, Module, Object, Value, Ruby
 };
-use notify::{Config, PollWatcher, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Config, PollWatcher, RecommendedWatcher, RecursiveMode, Watcher, WatcherKind};
 use std::{path::Path, time::Duration, sync::{Arc, atomic::{AtomicBool, Ordering}}};
 
 mod event;
 mod gvl_helpers;
 use crate::event::WatchatEvent;
 use crate::gvl_helpers::{call_with_gvl, call_without_gvl};
+
+fn backend() -> String {
+    match RecommendedWatcher::kind() {
+        WatcherKind::Inotify => "inotify",
+        WatcherKind::Fsevent => "fsevent",
+        WatcherKind::Kqueue => "kqueue",
+        WatcherKind::ReadDirectoryChangesWatcher => "ReadDirectoryChanges",
+        WatcherKind::PollWatcher => "poll",
+        _ => "unknown",
+    }
+    .to_string()
+}
 
 #[magnus::wrap(class = "Watchcat::Watcher")]
 struct WatchcatWatcher {
@@ -192,7 +204,11 @@ impl WatchcatWatcher {
                                             continue;
                                         }
 
-                                        let macos_ambiguous_metadata_touch = cfg!(target_os = "macos")
+                                        // With `macos_kqueue`, every chmod/chown/touch on macOS
+                                        // arrives as `Metadata(Any)` too, but kqueue has no
+                                        // separate `Access` events to conflate it with, so it
+                                        // must not be swallowed by `ignore_access` there.
+                                        let macos_ambiguous_metadata_touch = cfg!(all(target_os = "macos", not(feature = "macos_kqueue")))
                                             && matches!(
                                                 event.kind,
                                                 notify::event::EventKind::Modify(
@@ -338,6 +354,7 @@ impl WatchcatWatcher {
 #[magnus::init]
 fn init(ruby: &Ruby) -> Result<(), Error> {
     let module = ruby.define_module("Watchcat")?;
+    module.define_singleton_method("backend", function!(backend, 0))?;
 
     let watcher_class = module.define_class("Watcher", ruby.class_object())?;
     watcher_class.define_singleton_method("new", function!(WatchcatWatcher::new, 0))?;
