@@ -14,6 +14,6 @@ macos_kqueue = ["notify/macos_kqueue"]
 
 [dependencies]
 crossbeam-channel = "0.5.15"
-magnus = "0.8"
+magnus = "0.9"
 notify = { version = "8.2.0", default-features = false, features = ["crossbeam-channel"] }
 rb-sys = "0.9.128"
