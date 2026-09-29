@@ -318,6 +318,14 @@ class Watchcat::KindTest < Minitest::Test
     end
   end
 
+  def test_metadata_permissions_kind
+    event = Watchcat::Event.new(["modify", "metadata", "permissions"], ["/tmp/x"], "Modify(Metadata(Permissions))")
+
+    assert event.kind.modify.metadata?
+    assert event.kind.modify.metadata.permission?
+    assert event.kind.modify.permission?
+  end
+
   def test_event_without_paths
     event = Watchcat::Event.new([], [], "Other")
 
