@@ -103,11 +103,17 @@ module Watchcat
         next unless dispatch?(event)
 
         if @debounce > 0 && paths.size == 1
-          @debouncer.debounce(paths[0], @debounce) { @block.call(event) }
+          @debouncer.debounce(paths[0], @debounce) { invoke(event) }
         else
-          @block.call(event)
+          invoke(event)
         end
       end
+    end
+
+    def invoke(event)
+      @block.call(event)
+    rescue => e
+      warn e.full_message(highlight: false)
     end
 
     def dispatch?(event)
