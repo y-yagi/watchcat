@@ -268,7 +268,7 @@ watches:
       - "*.rb"
       - "*.yml"
     actions:
-      - command: "echo 'Ruby/YAML file changed: {{file_name}}'"
+      - command: "echo Ruby/YAML file changed: {{file_name}}"
       - command: "rubocop {{file_path}}"
 ```
 
@@ -297,6 +297,8 @@ When specifying commands, you can use the following variables:
 | {{file_base}}  | File name without extension              | `file`                   |
 | {{file_ext}}   | File extension                           | `.rb`                    |
 | {{event_type}} | Type of event                            | `create`                 |
+
+On non-Windows platforms, values are shell-escaped automatically, so do not wrap placeholders in quotes in commands (e.g. use `echo {{file_path}}`, not `echo '{{file_path}}'`). On Windows, values are substituted as-is.
 
 ## Contributing
 

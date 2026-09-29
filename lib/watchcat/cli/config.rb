@@ -37,7 +37,7 @@ module Watchcat
                 - "*.ts"
                 - "*.css"
               actions:
-                - command: "echo 'File changed: {{file_path}}'"
+                - command: "echo File changed: {{file_path}}"
 
             - path: "./docs"
               recursive: true
@@ -46,7 +46,7 @@ module Watchcat
               patterns:
                 - "*.md"
               actions:
-                - command: "echo 'Documentation updated: {{file_name}}'"
+                - command: "echo Documentation updated: {{file_name}}"
         YAML
 
         if File.exist?(file_path)

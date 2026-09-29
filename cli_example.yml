@@ -10,5 +10,5 @@ watches:
       - "*.rb"
       - "*.yml"
     actions:
-      - command: "echo 'Ruby/YAML file changed: {{file_name}}'"
+      - command: "echo Ruby/YAML file changed: {{file_name}}"
       - command: "rubocop {{file_path}}"
