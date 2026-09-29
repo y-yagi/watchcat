@@ -2,6 +2,7 @@ require_relative "watchcat/version"
 require_relative "watchcat/executor"
 require_relative "watchcat/debouncer"
 require_relative "watchcat/event_handler"
+require_relative "watchcat/stderr_logger"
 
 begin
   require "watchcat/#{RUBY_VERSION.to_f}/watchcat"
@@ -11,6 +12,12 @@ end
 
 module Watchcat
   class << self
+    attr_writer :logger
+
+    def logger
+      @logger ||= StderrLogger.new
+    end
+
     def watch(
       paths,
       recursive: true,

@@ -113,7 +113,7 @@ module Watchcat
     def invoke(event)
       @block.call(event)
     rescue => e
-      warn e.full_message(highlight: false)
+      Watchcat.logger.error(e.full_message(highlight: false))
     end
 
     def dispatch?(event)

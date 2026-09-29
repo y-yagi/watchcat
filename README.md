@@ -239,6 +239,17 @@ its exact timing (and behavior) can differ per platform, notably on macOS
 (FSEvents). Both `watch` and `unwatch` accept a single path or an array of
 paths.
 
+### Logging
+
+Errors raised by your callback are logged and watching continues. By default
+they are written to stderr. Set `Watchcat.logger` to route them elsewhere:
+
+```ruby
+Watchcat.logger = Logger.new("watchcat.log")
+# or, in Rails
+Watchcat.logger = Rails.logger
+```
+
 ## CLI
 
 `watchcat` comes with a command-line interface that allows you to watch files and execute commands when changes occur.
