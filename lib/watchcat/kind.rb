@@ -41,7 +41,7 @@ module Watchcat
     extend Forwardable
 
     attr_accessor :kind, :access_mode
-    delegate [:excute_mode?, :read_mode?, :write_mode?] => :@access_mode
+    delegate [:execute_mode?, :read_mode?, :write_mode?] => :@access_mode
 
     def initialize
       @kind, @access_mode = nil, nil
