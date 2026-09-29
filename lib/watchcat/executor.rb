@@ -50,6 +50,8 @@ module Watchcat
       if @watch_thread && @watch_thread.alive?
         @watch_thread.join(1) # Wait up to 1 second for thread to finish
       end
+
+      @debouncer&.clear
     end
 
     def watch(paths, recursive: @recursive)
