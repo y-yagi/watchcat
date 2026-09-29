@@ -4,6 +4,7 @@ require "test_helper"
 require "watchcat/cli"
 require "tmpdir"
 require "fileutils"
+require "shellwords"
 
 class Watchcat::CLITest < Minitest::Test
   def test_config_loading
@@ -59,6 +60,31 @@ class Watchcat::CLITest < Minitest::Test
       assert_includes result, "test.rb"
       assert_includes result, tmpdir
       assert_includes result, "modify"
+    end
+  end
+
+  def test_action_executor_escapes_shell_metacharacters
+    skip if windows?
+
+    Dir.mktmpdir do |tmpdir|
+      name = "a b;touch injected.rb"
+      out = File.join(tmpdir, "out.txt")
+      event = Object.new
+      def event.kind
+        mock_kind = Object.new
+        def mock_kind.event_type; "modify"; end
+        mock_kind
+      end
+
+      executor = Watchcat::CLI::ActionExecutor.new(File.join(tmpdir, name), event)
+      Dir.chdir(tmpdir) do
+        capture_io do
+          executor.execute("command" => "printf %s {{file_name}} > #{Shellwords.escape(out)}")
+        end
+      end
+
+      assert_equal name, File.read(out)
+      refute File.exist?(File.join(tmpdir, "injected.rb"))
     end
   end
 

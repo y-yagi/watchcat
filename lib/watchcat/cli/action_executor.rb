@@ -1,3 +1,5 @@
+require "shellwords"
+
 module Watchcat
   module CLI
     class ActionExecutor
@@ -32,12 +34,18 @@ module Watchcat
         return template unless template.is_a?(String)
 
         template
-          .gsub("{{file_path}}", @file_path)
-          .gsub("{{file_dir}}", @file_dir)
-          .gsub("{{file_name}}", @file_name)
-          .gsub("{{file_base}}", @file_base)
-          .gsub("{{file_ext}}", @file_ext)
-          .gsub("{{event_type}}", @event.kind.event_type)
+          .gsub("{{file_path}}", escape(@file_path))
+          .gsub("{{file_dir}}", escape(@file_dir))
+          .gsub("{{file_name}}", escape(@file_name))
+          .gsub("{{file_base}}", escape(@file_base))
+          .gsub("{{file_ext}}", escape(@file_ext))
+          .gsub("{{event_type}}", escape(@event.kind.event_type))
+      end
+
+      def escape(value)
+        return value if Gem.win_platform?
+
+        Shellwords.escape(value)
       end
     end
   end
