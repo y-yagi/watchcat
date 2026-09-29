@@ -174,7 +174,7 @@ module Watchcat
     end
 
     def permission?
-      @kind == "permission"
+      @kind == "permissions"
     end
 
     def ownership?
