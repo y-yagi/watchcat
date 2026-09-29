@@ -334,4 +334,14 @@ class Watchcat::KindTest < Minitest::Test
     refute event.kind.any.folder?
     refute event.directory?
   end
+
+  def test_access_execute_mode
+    event = Watchcat::Event.new(["access", "open", "execute"], ["/tmp/x"], "Access(Open(Execute))")
+
+    assert event.kind.access?
+    assert event.kind.access.open?
+    assert event.kind.access.execute_mode?
+    refute event.kind.access.read_mode?
+    refute event.kind.access.write_mode?
+  end
 end
