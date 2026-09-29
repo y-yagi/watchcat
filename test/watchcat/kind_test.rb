@@ -317,4 +317,13 @@ class Watchcat::KindTest < Minitest::Test
       assert_nil file_event.dest_path
     end
   end
+
+  def test_event_without_paths
+    event = Watchcat::Event.new([], [], "Other")
+
+    assert event.kind.any?
+    refute event.kind.any.file?
+    refute event.kind.any.folder?
+    refute event.directory?
+  end
 end
