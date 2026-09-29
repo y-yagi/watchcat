@@ -117,6 +117,56 @@ class WatchcatTest < Minitest::Test
   end
 
 
+  def test_keeps_watching_when_callback_raises
+    events = []
+    raised = false
+    _, err = capture_io do
+      @watchcat = Watchcat.watch(@tmpdir) do |e|
+        unless raised
+          raised = true
+          raise "boom from callback"
+        end
+        events << e
+      end
+      sleep 0.2
+
+      FileUtils.touch(File.join(@tmpdir, "a.txt"))
+      sleep 1
+      FileUtils.touch(File.join(@tmpdir, "b.txt"))
+      sleep 1
+    end
+
+    assert raised
+    assert_includes err, "boom from callback"
+    assert @watchcat.alive?
+    assert events.any? { |e| e.paths.any? { |p| p.end_with?("b.txt") } }, inspect_events(events)
+  end
+
+  def test_keeps_watching_when_debounced_callback_raises
+    events = []
+    raised = false
+    _, err = capture_io do
+      @watchcat = Watchcat.watch(@tmpdir, debounce: 100) do |e|
+        unless raised
+          raised = true
+          raise "boom from debounced callback"
+        end
+        events << e
+      end
+      sleep 0.2
+
+      FileUtils.touch(File.join(@tmpdir, "a.txt"))
+      sleep 1
+      FileUtils.touch(File.join(@tmpdir, "b.txt"))
+      sleep 1
+    end
+
+    assert raised
+    assert_includes err, "boom from debounced callback"
+    assert @watchcat.alive?
+    assert events.any? { |e| e.paths.any? { |p| p.end_with?("b.txt") } }, inspect_events(events)
+  end
+
   def test_watch_file
     skip unless RUBY_PLATFORM.match?("linux")
 
