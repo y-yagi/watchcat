@@ -61,11 +61,10 @@ module Watchcat
         send("build_#{event}_kind", kinds)
       else
         @kind.any = Watchcat::AnyKind.new
-        if File.directory?(@paths.first)
-          @kind.any.kind = "folder"
-        else
-          @kind.any.kind = "file"
-        end
+        path = @paths.first
+        return unless path
+
+        @kind.any.kind = File.directory?(path) ? "folder" : "file"
       end
     end
 
