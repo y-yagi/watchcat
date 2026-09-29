@@ -167,6 +167,42 @@ class WatchcatTest < Minitest::Test
     assert events.any? { |e| e.paths.any? { |p| p.end_with?("b.txt") } }, inspect_events(events)
   end
 
+  def test_callback_error_is_sent_to_configured_logger
+    fake = Class.new do
+      attr_reader :errors
+
+      def initialize
+        @errors = []
+      end
+
+      def error(message)
+        @errors << message
+      end
+    end.new
+    original = Watchcat.logger
+    Watchcat.logger = fake
+    raised = false
+
+    @watchcat = Watchcat.watch(@tmpdir) do |_e|
+      raised = true
+      raise "boom for logger"
+    end
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 1
+
+    assert raised
+    assert fake.errors.any? { |m| m.include?("boom for logger") }, fake.errors.inspect
+  ensure
+    Watchcat.logger = original
+  end
+
+  def test_stderr_logger_writes_message_to_current_stderr
+    logger = Watchcat::StderrLogger.new
+    _, err = capture_io { logger.error("msg error") }
+    assert_equal "msg error\n", err
+  end
+
   def test_watch_file
     skip unless RUBY_PLATFORM.match?("linux")
 
