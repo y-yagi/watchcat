@@ -24,6 +24,12 @@ class Watchcat::DynamicPathsTest < Minitest::Test
     assert_raises(ArgumentError) { @watchcat.watch("/no/such/path/xyz") }
   end
 
+  def test_watch_nonexistent_initial_path_raises
+    missing = File.join(@tmpdir, "missing")
+
+    assert_raises(ArgumentError) { Watchcat.watch(missing) { |e| } }
+  end
+
   def test_watched_reflects_watch_and_unwatch
     @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| }
     sleep 0.2

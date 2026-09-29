@@ -22,6 +22,7 @@ module Watchcat
     end
 
     def start
+      validate_paths!(@paths)
       @owner_pid = Process.pid
 
       # Always start watching in a background thread to avoid blocking
@@ -56,7 +57,7 @@ module Watchcat
 
     def watch(paths, recursive: @recursive)
       paths = Array(paths)
-      paths.each { |p| raise ArgumentError, "path does not exist: #{p}" unless File.exist?(p) }
+      validate_paths!(paths)
       @watcher.add(paths, recursive: recursive)
       @paths |= paths
       self
@@ -80,6 +81,10 @@ module Watchcat
     end
 
     private
+
+    def validate_paths!(paths)
+      Array(paths).each { |p| raise ArgumentError, "path does not exist: #{p}" unless File.exist?(p) }
+    end
 
     def start_watching
       @watcher.watch(
