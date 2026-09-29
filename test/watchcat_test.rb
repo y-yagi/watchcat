@@ -99,6 +99,23 @@ class WatchcatTest < Minitest::Test
     assert_equal 2, events.count, inspect_events(events)
   end
 
+  def test_stop_cancels_pending_debounced_events
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: true, debounce: 1000) { |e| events << e }
+    debouncer = @watchcat.instance_variable_get(:@debouncer)
+
+    sleep 0.2
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.3
+
+    assert_operator debouncer.pending_count, :>, 0
+    @watchcat.stop
+    assert_equal 0, debouncer.pending_count
+
+    sleep 1.3
+    assert_empty events, inspect_events(events)
+  end
+
 
   def test_watch_file
     skip unless RUBY_PLATFORM.match?("linux")
