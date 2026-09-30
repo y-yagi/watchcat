@@ -2,7 +2,8 @@ use crossbeam_channel::{select, unbounded};
 use magnus::{
     function, method,
     scan_args::{get_kwargs, scan_args},
-    Error, Module, Object, Value, Ruby
+    value::ReprValue,
+    Error, Module, Object, RModule, Value, Ruby
 };
 use notify::{Config, PollWatcher, RecommendedWatcher, RecursiveMode, Watcher, WatcherKind};
 use std::{path::Path, time::Duration, sync::{Arc, atomic::{AtomicBool, Ordering}}};
@@ -51,6 +52,16 @@ fn watcher_unwatch(w: &mut WatcherEnum, path: &Path) -> notify::Result<()> {
         WatcherEnum::Poll(x) => x.unwatch(path),
         WatcherEnum::Recommended(x) => x.unwatch(path),
     }
+}
+
+fn log_error(message: String) {
+    call_with_gvl(|ruby| {
+        let _ = ruby
+            .class_object()
+            .const_get::<_, RModule>("Watchcat")
+            .and_then(|m| m.funcall::<_, _, Value>("logger", ()))
+            .and_then(|logger| logger.funcall::<_, _, Value>("error", (message,)));
+    });
 }
 
 // Carries a failure out of the GVL-released section without touching Ruby.
@@ -178,12 +189,16 @@ impl WatchcatWatcher {
                                 Command::Watch(paths, recursive) => {
                                     let m = if recursive { RecursiveMode::Recursive } else { RecursiveMode::NonRecursive };
                                     for p in &paths {
-                                        let _ = watcher_watch(&mut _watcher, Path::new(p), m);
+                                        if let Err(e) = watcher_watch(&mut _watcher, Path::new(p), m) {
+                                            log_error(format!("watchcat: failed to watch {p}: {e}"));
+                                        }
                                     }
                                 }
                                 Command::Unwatch(paths) => {
                                     for p in &paths {
-                                        let _ = watcher_unwatch(&mut _watcher, Path::new(p));
+                                        if let Err(e) = watcher_unwatch(&mut _watcher, Path::new(p)) {
+                                            log_error(format!("watchcat: failed to unwatch {p}: {e}"));
+                                        }
                                     }
                                 }
                             }
