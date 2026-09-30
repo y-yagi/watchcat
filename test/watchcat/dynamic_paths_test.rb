@@ -81,4 +81,33 @@ class Watchcat::DynamicPathsTest < Minitest::Test
              inspect_events(events)
     end
   end
+
+  def test_unwatch_failure_is_logged_and_watching_continues
+    skip if windows?
+
+    messages = []
+    logger = Object.new
+    logger.define_singleton_method(:error) { |message| messages << message }
+    original_logger = Watchcat.logger
+    Watchcat.logger = logger
+
+    events = []
+    @watchcat = Watchcat.watch(@tmpdir, recursive: false) { |e| events << e }
+    sleep 0.2
+
+    @watchcat.unwatch(@tmpdir2)
+
+    deadline = Time.now + 2
+    sleep 0.05 until !messages.empty? || Time.now > deadline
+
+    assert messages.any? { |m| m.include?(@tmpdir2) }, messages.inspect
+    assert @watchcat.alive?
+
+    FileUtils.touch(File.join(@tmpdir, "a.txt"))
+    sleep 0.3
+
+    assert events.any? { |e| e.paths.any? { |p| p.to_s.include?(@tmpdir) } }, inspect_events(events)
+  ensure
+    Watchcat.logger = original_logger
+  end
 end
