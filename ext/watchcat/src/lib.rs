@@ -1,4 +1,4 @@
-use crossbeam_channel::{select, unbounded};
+use crossbeam_channel::{bounded, select, unbounded};
 use magnus::{
     function, method,
     scan_args::{get_kwargs, scan_args},
@@ -11,7 +11,7 @@ use std::{path::Path, time::Duration, sync::{Arc, atomic::{AtomicBool, Ordering}
 mod event;
 mod gvl_helpers;
 use crate::event::WatchatEvent;
-use crate::gvl_helpers::{call_with_gvl, call_without_gvl};
+use crate::gvl_helpers::{call_with_gvl, call_without_gvl, check_interrupts};
 
 fn backend() -> String {
     match RecommendedWatcher::kind() {
@@ -64,13 +64,31 @@ fn log_error(message: String) {
     });
 }
 
-// Carries a failure out of the GVL-released section without touching Ruby.
-// `magnus::Error` (and the `Ruby` handle needed to build one) must only be
-// used while the GVL is held, so the actual `magnus::Error` is constructed
-// after control returns from `call_without_gvl`.
-enum WatchFailure {
-    Arg(String),
-    Runtime(String),
+enum WaitResult {
+    Stopped,
+    Event(notify::Event),
+    Failure(String),
+    Interrupted,
+}
+
+fn create_watcher(
+    pathnames: &[String],
+    mode: RecursiveMode,
+    force_polling: bool,
+    poll_interval: u64,
+    tx: crossbeam_channel::Sender<notify::Result<notify::Event>>,
+) -> notify::Result<WatcherEnum> {
+    let mut watcher = if force_polling {
+        let delay = Duration::from_millis(poll_interval);
+        let config = notify::Config::default().with_poll_interval(delay);
+        WatcherEnum::Poll(PollWatcher::new(tx, config)?)
+    } else {
+        WatcherEnum::Recommended(RecommendedWatcher::new(tx, Config::default())?)
+    };
+    for pathname in pathnames {
+        watcher_watch(&mut watcher, Path::new(pathname), mode)?;
+    }
+    Ok(watcher)
 }
 
 enum Command {
@@ -139,143 +157,131 @@ impl WatchcatWatcher {
         cmd_rx: crossbeam_channel::Receiver<Command>,
         ruby: &Ruby
     ) -> Result<bool, Error> {
-        // `ruby` (and any `magnus::Error`/`ExceptionClass` built from it) must only be
-        // touched while the GVL is held, so it is intentionally NOT captured by the
-        // `call_without_gvl` closure below. Failures are carried out as plain
-        // `WatchFailure` values and converted to a real `magnus::Error` afterwards,
-        // once control has returned here with the GVL held again.
-        let result: Result<bool, WatchFailure> = call_without_gvl(move || {
-            let (tx, watcher_rx) = unbounded();
-            // This variable is needed to keep `watcher` active.
-            let mut _watcher = match force_polling {
-                true => {
-                    let delay = Duration::from_millis(poll_interval);
-                    let config = notify::Config::default().with_poll_interval(delay);
-                    let mut watcher = PollWatcher::new(tx, config)
-                        .map_err(|e| WatchFailure::Arg(e.to_string()))?;
-                    for pathname in &pathnames {
-                        let path = Path::new(pathname);
-                        watcher
-                            .watch(path, mode)
-                            .map_err(|e| WatchFailure::Arg(e.to_string()))?;
-                    }
-                    WatcherEnum::Poll(watcher)
+        // `ruby` (and any `magnus::Error`/`Value` built from it) must only be
+        // touched while the GVL is held, so it is intentionally NOT captured by
+        // the `call_without_gvl` closures below. They hand plain Rust values back
+        // as `WaitResult`, and anything that involves Ruby (yielding to the
+        // block, raising, handling interrupts) happens here with the GVL held.
+        let (interrupt_tx, interrupt_rx) = bounded::<()>(1);
+        let (tx, watcher_rx) = unbounded();
+
+        // This variable is needed to keep `watcher` active.
+        let mut _watcher = loop {
+            let tx = tx.clone();
+            match call_without_gvl(
+                || create_watcher(&pathnames, mode, force_polling, poll_interval, tx),
+                &interrupt_tx,
+            ) {
+                Some(result) => {
+                    break result.map_err(|e| Error::new(ruby.exception_arg_error(), e.to_string()))?
                 }
-                false => {
-                    let mut watcher = RecommendedWatcher::new(tx, Config::default())
-                        .map_err(|e| WatchFailure::Arg(e.to_string()))?;
-                    for pathname in &pathnames {
-                        let path = Path::new(pathname);
-                        watcher
-                            .watch(path, mode)
-                            .map_err(|e| WatchFailure::Arg(e.to_string()))?;
-                    }
-                    WatcherEnum::Recommended(watcher)
-                }
-            };
-
-            loop {
-                if terminated.load(Ordering::SeqCst) {
-                    break Ok(true);
-                }
-
-                select! {
-                    recv(rx) -> _res => {
-                        break Ok(true);
-                    }
-                    recv(cmd_rx) -> cmd => {
-                        if let Ok(cmd) = cmd {
-                            match cmd {
-                                Command::Watch(paths, recursive) => {
-                                    let m = if recursive { RecursiveMode::Recursive } else { RecursiveMode::NonRecursive };
-                                    for p in &paths {
-                                        if let Err(e) = watcher_watch(&mut _watcher, Path::new(p), m) {
-                                            log_error(format!("watchcat: failed to watch {p}: {e}"));
-                                        }
-                                    }
-                                }
-                                Command::Unwatch(paths) => {
-                                    for p in &paths {
-                                        if let Err(e) = watcher_unwatch(&mut _watcher, Path::new(p)) {
-                                            log_error(format!("watchcat: failed to unwatch {p}: {e}"));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    recv(watcher_rx) -> res => {
-                        match res {
-                            Ok(event) => {
-                                match event {
-                                    Ok(event) => {
-                                        let paths = event
-                                            .paths
-                                            .iter()
-                                            .map(|p| p.to_string_lossy().into_owned())
-                                            .collect::<Vec<_>>();
-
-                                        if ignore_remove && matches!(event.kind, notify::event::EventKind::Remove(_)) {
-                                            continue;
-                                        }
-
-                                        // With `macos_kqueue`, every chmod/chown/touch on macOS
-                                        // arrives as `Metadata(Any)` too, but kqueue has no
-                                        // separate `Access` events to conflate it with, so it
-                                        // must not be swallowed by `ignore_access` there.
-                                        let macos_ambiguous_metadata_touch = cfg!(all(target_os = "macos", not(feature = "macos_kqueue")))
-                                            && matches!(
-                                                event.kind,
-                                                notify::event::EventKind::Modify(
-                                                    notify::event::ModifyKind::Metadata(
-                                                        notify::event::MetadataKind::Any
-                                                    )
-                                                )
-                                            );
-                                        if ignore_access
-                                            && (matches!(
-                                                event.kind,
-                                                notify::event::EventKind::Access(_)
-                                            ) || macos_ambiguous_metadata_touch)
-                                        {
-                                            continue;
-                                        }
-                                        if ignore_create && matches!(event.kind, notify::event::EventKind::Create(_)) {
-                                            continue;
-                                        }
-                                        if ignore_modify && matches!(event.kind, notify::event::EventKind::Modify(_)) {
-                                            continue;
-                                        }
-
-                                        // Yield to Ruby with GVL
-                                        let result: Result<Value, String> = call_with_gvl(|ruby| {
-                                            ruby.yield_value::<(Vec<String>, Vec<String>, String), Value>(
-                                                (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
-                                            ).map_err(|e| e.to_string())
-                                        });
-
-                                        if let Err(msg) = result {
-                                            break Err(WatchFailure::Runtime(format!("Error yielding to Ruby block: {msg}")));
-                                        }
-                                    }
-                                    Err(e) => {
-                                        break Err(WatchFailure::Runtime(e.to_string()));
-                                    }
-                                }
-                            }
-                            Err(e) => {
-                                break Err(WatchFailure::Runtime(e.to_string()));
-                            }
-                        }
-                    }
-                }
+                None => check_interrupts()?,
             }
-        });
+        };
+        drop(tx);
 
-        result.map_err(|err| match err {
-            WatchFailure::Arg(msg) => Error::new(ruby.exception_arg_error(), msg),
-            WatchFailure::Runtime(msg) => Error::new(ruby.exception_runtime_error(), msg),
-        })
+        loop {
+            let outcome = call_without_gvl(
+                || loop {
+                    if terminated.load(Ordering::SeqCst) {
+                        break WaitResult::Stopped;
+                    }
+
+                    select! {
+                        recv(interrupt_rx) -> _res => {
+                            break WaitResult::Interrupted;
+                        }
+                        recv(rx) -> _res => {
+                            break WaitResult::Stopped;
+                        }
+                        recv(cmd_rx) -> cmd => {
+                            if let Ok(cmd) = cmd {
+                                match cmd {
+                                    Command::Watch(paths, recursive) => {
+                                        let m = if recursive { RecursiveMode::Recursive } else { RecursiveMode::NonRecursive };
+                                        for p in &paths {
+                                            if let Err(e) = watcher_watch(&mut _watcher, Path::new(p), m) {
+                                                log_error(format!("watchcat: failed to watch {p}: {e}"));
+                                            }
+                                        }
+                                    }
+                                    Command::Unwatch(paths) => {
+                                        for p in &paths {
+                                            if let Err(e) = watcher_unwatch(&mut _watcher, Path::new(p)) {
+                                                log_error(format!("watchcat: failed to unwatch {p}: {e}"));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        recv(watcher_rx) -> res => {
+                            match res {
+                                Ok(Ok(event)) => {
+                                    if ignore_remove && matches!(event.kind, notify::event::EventKind::Remove(_)) {
+                                        continue;
+                                    }
+
+                                    // With `macos_kqueue`, every chmod/chown/touch on macOS
+                                    // arrives as `Metadata(Any)` too, but kqueue has no
+                                    // separate `Access` events to conflate it with, so it
+                                    // must not be swallowed by `ignore_access` there.
+                                    let macos_ambiguous_metadata_touch = cfg!(all(target_os = "macos", not(feature = "macos_kqueue")))
+                                        && matches!(
+                                            event.kind,
+                                            notify::event::EventKind::Modify(
+                                                notify::event::ModifyKind::Metadata(
+                                                    notify::event::MetadataKind::Any
+                                                )
+                                            )
+                                        );
+                                    if ignore_access
+                                        && (matches!(
+                                            event.kind,
+                                            notify::event::EventKind::Access(_)
+                                        ) || macos_ambiguous_metadata_touch)
+                                    {
+                                        continue;
+                                    }
+                                    if ignore_create && matches!(event.kind, notify::event::EventKind::Create(_)) {
+                                        continue;
+                                    }
+                                    if ignore_modify && matches!(event.kind, notify::event::EventKind::Modify(_)) {
+                                        continue;
+                                    }
+
+                                    break WaitResult::Event(event);
+                                }
+                                Ok(Err(e)) => {
+                                    break WaitResult::Failure(e.to_string());
+                                }
+                                Err(e) => {
+                                    break WaitResult::Failure(e.to_string());
+                                }
+                            }
+                        }
+                    }
+                },
+                &interrupt_tx,
+            )
+            .unwrap_or(WaitResult::Interrupted);
+
+            match outcome {
+                WaitResult::Stopped => return Ok(true),
+                WaitResult::Event(event) => {
+                    let paths = event
+                        .paths
+                        .iter()
+                        .map(|p| p.to_string_lossy().into_owned())
+                        .collect::<Vec<_>>();
+                    ruby.yield_value::<(Vec<String>, Vec<String>, String), Value>(
+                        (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
+                    )?;
+                }
+                WaitResult::Failure(msg) => return Err(Error::new(ruby.exception_runtime_error(), msg)),
+                WaitResult::Interrupted => check_interrupts()?,
+            }
+        }
     }
 
     #[allow(clippy::let_unit_value, clippy::type_complexity)]
