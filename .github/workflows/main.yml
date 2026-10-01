@@ -34,7 +34,7 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
-        cargo-cache: false
+        cargo-cache: true
         bundler: "latest"
         rubygems: "latest"
 
@@ -57,7 +57,7 @@ jobs:
       with:
         ruby-version: '3.4'
         bundler-cache: true
-        cargo-cache: false
+        cargo-cache: true
         bundler: "latest"
         rubygems: "latest"
 
@@ -77,7 +77,7 @@ jobs:
         uses: oxidize-rb/actions/setup-ruby-and-rust@4c939d516bd77ec5806f382c9bb574f4634098a7 # v1.4.2
         with:
           bundler-cache: true
-          cargo-cache: false
+          cargo-cache: true
           ruby-version: '3.3'
 
       - name: Run Clippy
@@ -102,7 +102,7 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
-        cargo-cache: false
+        cargo-cache: true
         bundler: "latest"
         rubygems: "latest"
 
