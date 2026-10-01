@@ -1,11 +1,12 @@
-use std::{ffi::c_void, ptr::null_mut};
+use std::ffi::c_void;
 
-use magnus::Ruby;
+use crossbeam_channel::Sender;
+use magnus::{rb_sys::protect, Error, Ruby};
 use rb_sys::{
-    rb_thread_call_with_gvl, rb_thread_call_without_gvl
+    rb_thread_call_with_gvl, rb_thread_call_without_gvl2, rb_thread_check_ints, Qnil, VALUE,
 };
 
-pub fn call_without_gvl<F, R>(f: F) -> R
+pub fn call_without_gvl<F, R>(f: F, interrupt: &Sender<()>) -> Option<R>
 where
     F: Send + FnOnce() -> R,
 {
@@ -22,20 +23,38 @@ where
         Box::into_raw(boxed_result) as *mut c_void
     }
 
+    extern "C" fn unblock(arg: *mut c_void) {
+        let sender = unsafe { &*(arg as *const Sender<()>) };
+        let _ = sender.try_send(());
+    }
+
     let mut closure_opt = Some(f);
     let closure_ptr = &mut closure_opt as *mut Option<F> as *mut c_void;
+    let interrupt_ptr = interrupt as *const Sender<()> as *mut c_void;
 
     let raw_result_ptr = unsafe {
-        rb_thread_call_without_gvl(
+        rb_thread_call_without_gvl2(
             Some(trampoline::<F, R>),
             closure_ptr,
-            None,
-            null_mut(),
+            Some(unblock),
+            interrupt_ptr,
         )
     };
 
+    if raw_result_ptr.is_null() {
+        return None;
+    }
+
     let result_box = unsafe { Box::from_raw(raw_result_ptr as *mut R) };
-    *result_box
+    Some(*result_box)
+}
+
+pub fn check_interrupts() -> Result<(), Error> {
+    protect(|| {
+        unsafe { rb_thread_check_ints() };
+        Qnil as VALUE
+    })
+    .map(|_| ())
 }
 
 pub fn call_with_gvl<F, R>(f: F) -> R
