@@ -168,17 +168,7 @@ class WatchcatTest < Minitest::Test
   end
 
   def test_callback_error_is_sent_to_configured_logger
-    fake = Class.new do
-      attr_reader :errors
-
-      def initialize
-        @errors = []
-      end
-
-      def error(message)
-        @errors << message
-      end
-    end.new
+    fake = FakeLogger.new
     original = Watchcat.logger
     Watchcat.logger = fake
     raised = false
@@ -195,6 +185,30 @@ class WatchcatTest < Minitest::Test
     assert fake.errors.any? { |m| m.include?("boom for logger") }, fake.errors.inspect
   ensure
     Watchcat.logger = original
+  end
+
+  def test_notify_error_is_logged_and_watching_continues
+    skip if windows? || Process.uid.zero?
+
+    fake = FakeLogger.new
+    original = Watchcat.logger
+    Watchcat.logger = fake
+    locked = File.join(@tmpdir, "locked")
+    Dir.mkdir(locked)
+    File.chmod(0o000, locked)
+    events = []
+
+    @watchcat = Watchcat.watch(@tmpdir, force_polling: true, poll_interval: 100, recursive: true) { |e| events << e }
+    sleep 0.5
+    FileUtils.touch(File.join(@tmpdir, "after.txt"))
+    sleep 0.5
+
+    assert @watchcat.alive?
+    assert_equal 1, fake.errors.count { |m| m.start_with?("watchcat:") }, fake.errors.inspect
+    assert events.any? { |e| e.paths.any? { |p| p.end_with?("after.txt") } }, inspect_events(events)
+  ensure
+    File.chmod(0o755, locked) if locked && File.exist?(locked)
+    Watchcat.logger = original if original
   end
 
   def test_stderr_logger_writes_message_to_current_stderr

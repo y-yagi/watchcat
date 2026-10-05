@@ -56,17 +56,23 @@ fn watcher_unwatch(w: &mut WatcherEnum, path: &Path) -> notify::Result<()> {
 
 fn log_error(message: String) {
     call_with_gvl(|ruby| {
-        let _ = ruby
-            .class_object()
-            .const_get::<_, RModule>("Watchcat")
-            .and_then(|m| m.funcall::<_, _, Value>("logger", ()))
-            .and_then(|logger| logger.funcall::<_, _, Value>("error", (message,)));
+        let _ = call_logger(&ruby, message);
     });
+}
+
+fn call_logger(ruby: &Ruby, message: String) -> Result<(), Error> {
+    let logger: Value = ruby
+        .class_object()
+        .const_get::<_, RModule>("Watchcat")?
+        .funcall("logger", ())?;
+    logger.funcall::<_, _, Value>("error", (message,))?;
+    Ok(())
 }
 
 enum WaitResult {
     Stopped,
     Event(notify::Event),
+    NotifyError(String),
     Failure(String),
     Interrupted,
 }
@@ -180,6 +186,8 @@ impl WatchcatWatcher {
         };
         drop(tx);
 
+        let mut logged_notify_errors = std::collections::HashSet::<String>::new();
+
         loop {
             let outcome = call_without_gvl(
                 || loop {
@@ -253,7 +261,7 @@ impl WatchcatWatcher {
                                     break WaitResult::Event(event);
                                 }
                                 Ok(Err(e)) => {
-                                    break WaitResult::Failure(e.to_string());
+                                    break WaitResult::NotifyError(e.to_string());
                                 }
                                 Err(e) => {
                                     break WaitResult::Failure(e.to_string());
@@ -277,6 +285,11 @@ impl WatchcatWatcher {
                     ruby.yield_value::<(Vec<String>, Vec<String>, String), Value>(
                         (WatchatEvent::convert_kind(&event.kind), paths, format!("{:?}", event.kind))
                     )?;
+                }
+                WaitResult::NotifyError(msg) => {
+                    if logged_notify_errors.insert(msg.clone()) {
+                        call_logger(ruby, format!("watchcat: {msg}"))?;
+                    }
                 }
                 WaitResult::Failure(msg) => return Err(Error::new(ruby.exception_runtime_error(), msg)),
                 WaitResult::Interrupted => check_interrupts()?,
