@@ -12,6 +12,18 @@ else
   require "minitest/fail_fast"
 end
 
+class FakeLogger
+  attr_reader :errors
+
+  def initialize
+    @errors = []
+  end
+
+  def error(message)
+    @errors << message
+  end
+end
+
 def inspect_events(events)
   events.map {|e| [e.paths, e.raw_kind] }
 end
