@@ -288,7 +288,7 @@ impl WatchcatWatcher {
                 }
                 WaitResult::NotifyError(msg) => {
                     if logged_notify_errors.insert(msg.clone()) {
-                        call_logger(ruby, format!("watchcat: {msg}"))?;
+                        let _ = call_logger(ruby, format!("watchcat: {msg}"));
                     }
                 }
                 WaitResult::Failure(msg) => return Err(Error::new(ruby.exception_runtime_error(), msg)),
