@@ -28,10 +28,10 @@ jobs:
       BINDGEN_EXTRA_CLANG_ARGS: -DHAVE_STDBOOL_H=1
 
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@v7.0.1
 
     - name: Set up Ruby & Rust
-      uses: oxidize-rb/actions/setup-ruby-and-rust@08e22a43e1771991320b75fe2dfb29d8e3f46668
+      uses: oxidize-rb/actions/setup-ruby-and-rust@v1.5.0
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
@@ -51,10 +51,10 @@ jobs:
       WATCHCAT_BACKEND: kqueue
 
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@v7.0.1
 
     - name: Set up Ruby & Rust
-      uses: oxidize-rb/actions/setup-ruby-and-rust@08e22a43e1771991320b75fe2dfb29d8e3f46668
+      uses: oxidize-rb/actions/setup-ruby-and-rust@v1.5.0
       with:
         ruby-version: '3.4'
         bundler-cache: true
@@ -72,10 +72,10 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
 
       - name: Set up Ruby & Rust
-        uses: oxidize-rb/actions/setup-ruby-and-rust@4c939d516bd77ec5806f382c9bb574f4634098a7 # v1.4.2
+        uses: oxidize-rb/actions/setup-ruby-and-rust@v1.5.0
         with:
           bundler-cache: true
           cargo-cache: true
@@ -96,10 +96,10 @@ jobs:
           - windows-latest
 
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@v7.0.1
 
     - name: Set up Ruby & Rust
-      uses: oxidize-rb/actions/setup-ruby-and-rust@4c939d516bd77ec5806f382c9bb574f4634098a7
+      uses: oxidize-rb/actions/setup-ruby-and-rust@v1.5.0
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
