@@ -25,6 +25,7 @@ jobs:
           - macos-latest
     env:
       OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+      BINDGEN_EXTRA_CLANG_ARGS: -DHAVE_STDBOOL_H=1
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
